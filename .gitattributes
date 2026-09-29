@@ -1,0 +1,28 @@
+# Normalize line endings; Unity's YAML assets are diffable text (Force Text serialization is
+# already set in ProjectSettings/EditorSettings.asset — keep it that way).
+* text=auto eol=lf
+
+*.cs text diff=csharp
+*.cginc text
+*.shader text
+*.compute text
+
+*.unity text merge=unityyamlmerge eol=lf
+*.prefab text merge=unityyamlmerge eol=lf
+*.asset text merge=unityyamlmerge eol=lf
+*.meta text merge=unityyamlmerge eol=lf
+*.mat text merge=unityyamlmerge eol=lf
+*.anim text merge=unityyamlmerge eol=lf
+*.controller text merge=unityyamlmerge eol=lf
+*.physicsMaterial text merge=unityyamlmerge eol=lf
+*.physicsMaterial2D text merge=unityyamlmerge eol=lf
+
+# Binary assets — do not diff/normalize
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.psd binary
+*.ttf binary
+*.fbx binary
+*.wav binary
+*.mp3 binary
