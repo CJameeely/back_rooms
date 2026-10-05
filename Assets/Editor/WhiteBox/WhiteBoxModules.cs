@@ -21,7 +21,7 @@ namespace WhiteBoxKit
         public const float TileCenter = 2f; // 3 tiles of 2m across 6m -> centers at -2,0,2
         public static readonly float[] TileOffsets = { -2f, 0f, 2f };
 
-        public static Material MatStructure, MatInteractive, MatClue, MatLightPanel;
+        public static Material MatStructure, MatInteractive, MatClue, MatLightPanel, MatWall, MatFloor, MatCeiling;
 
         public static readonly string[] ModulePrefabNames =
         {
@@ -93,13 +93,20 @@ namespace WhiteBoxKit
             Shader lit = Shader.Find("Universal Render Pipeline/Lit");
             if (lit == null) lit = Shader.Find("Standard");
 
-            MatStructure = CreateOrLoadMaterial("Mat_Structure", lit, new Color(0.78f, 0.78f, 0.78f));
+            // Backrooms palette: dingy mustard-yellow walls/carpet, pale cream ceiling, aged
+            // furniture. Interactive (orange) and clue (cyan) stay saturated so they still pop
+            // against the yellow instead of blending in.
+            MatStructure = CreateOrLoadMaterial("Mat_Structure", lit, new Color(0.5f, 0.45f, 0.36f));
             MatInteractive = CreateOrLoadMaterial("Mat_Interactive", lit, new Color(1f, 0.45f, 0f));
             MatClue = CreateOrLoadMaterial("Mat_Clue", lit, new Color(0f, 0.85f, 0.9f));
 
-            MatLightPanel = CreateOrLoadMaterial("Mat_LightPanel", lit, Color.white);
+            MatWall = CreateOrLoadMaterial("Mat_Wall", lit, new Color(0.72f, 0.62f, 0.29f));
+            MatFloor = CreateOrLoadMaterial("Mat_Floor", lit, new Color(0.5f, 0.38f, 0.17f));
+            MatCeiling = CreateOrLoadMaterial("Mat_Ceiling", lit, new Color(0.8f, 0.75f, 0.55f));
+
+            MatLightPanel = CreateOrLoadMaterial("Mat_LightPanel", lit, new Color(1f, 0.95f, 0.82f));
             MatLightPanel.EnableKeyword("_EMISSION");
-            MatLightPanel.SetColor("_EmissionColor", Color.white * 2.2f);
+            MatLightPanel.SetColor("_EmissionColor", new Color(1f, 0.92f, 0.72f) * 2.2f);
             MatLightPanel.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
         }
 
@@ -109,6 +116,9 @@ namespace WhiteBoxKit
             MatInteractive = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Mat_Interactive.mat");
             MatClue = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Mat_Clue.mat");
             MatLightPanel = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Mat_LightPanel.mat");
+            MatWall = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Mat_Wall.mat");
+            MatFloor = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Mat_Floor.mat");
+            MatCeiling = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Mat_Ceiling.mat");
         }
 
         static Material CreateOrLoadMaterial(string name, Shader shader, Color color)
@@ -187,14 +197,14 @@ namespace WhiteBoxKit
             // Floor_2x2 : root pivot = top of floor surface (y=0)
             {
                 var root = NewRoot("Floor_2x2");
-                AddBoxPart(root, "Mesh", new Vector3(2f, 0.1f, 2f), new Vector3(0, -0.05f, 0), MatStructure);
+                AddBoxPart(root, "Mesh", new Vector3(2f, 0.1f, 2f), new Vector3(0, -0.05f, 0), MatFloor);
                 prefabs["Floor_2x2"] = SaveAsPrefab(root);
             }
 
             // Wall_2m : root pivot = bottom-center-front (front face at local z=0, extrudes to z=+0.2)
             {
                 var root = NewRoot("Wall_2m");
-                AddBoxPart(root, "Mesh", new Vector3(2f, WallHeight, WallThickness), new Vector3(0, WallHeight / 2f, WallThickness / 2f), MatStructure);
+                AddBoxPart(root, "Mesh", new Vector3(2f, WallHeight, WallThickness), new Vector3(0, WallHeight / 2f, WallThickness / 2f), MatWall);
                 prefabs["Wall_2m"] = SaveAsPrefab(root);
             }
 
@@ -205,20 +215,20 @@ namespace WhiteBoxKit
                 float jambW = (2f - doorW) / 2f; // 0.5
                 // Left jamb
                 AddBoxPart(root, "Mesh_JambL", new Vector3(jambW, WallHeight, WallThickness),
-                    new Vector3(-(doorW / 2f + jambW / 2f), WallHeight / 2f, WallThickness / 2f), MatStructure);
+                    new Vector3(-(doorW / 2f + jambW / 2f), WallHeight / 2f, WallThickness / 2f), MatWall);
                 // Right jamb
                 AddBoxPart(root, "Mesh_JambR", new Vector3(jambW, WallHeight, WallThickness),
-                    new Vector3((doorW / 2f + jambW / 2f), WallHeight / 2f, WallThickness / 2f), MatStructure);
+                    new Vector3((doorW / 2f + jambW / 2f), WallHeight / 2f, WallThickness / 2f), MatWall);
                 // Header above the door
                 AddBoxPart(root, "Mesh_Header", new Vector3(doorW, WallHeight - doorH, WallThickness),
-                    new Vector3(0, doorH + (WallHeight - doorH) / 2f, WallThickness / 2f), MatStructure);
+                    new Vector3(0, doorH + (WallHeight - doorH) / 2f, WallThickness / 2f), MatWall);
                 prefabs["Wall_Door"] = SaveAsPrefab(root);
             }
 
             // Ceiling_Light_2x2 : root pivot = bottom face of ceiling slab (slab extrudes upward)
             {
                 var root = NewRoot("Ceiling_Light_2x2");
-                AddBoxPart(root, "Mesh_Slab", new Vector3(2f, 0.1f, 2f), new Vector3(0, 0.05f, 0), MatStructure);
+                AddBoxPart(root, "Mesh_Slab", new Vector3(2f, 0.1f, 2f), new Vector3(0, 0.05f, 0), MatCeiling);
                 AddBoxPart(root, "Mesh_Panel", new Vector3(1.6f, 0.02f, 1.6f), new Vector3(0, -0.01f, 0), MatLightPanel);
                 GameObject lightGO = new GameObject("Light");
                 lightGO.transform.SetParent(root.transform, false);
@@ -227,7 +237,7 @@ namespace WhiteBoxKit
                 lt.type = LightType.Point;
                 lt.range = 4.5f;
                 lt.intensity = 1.4f;
-                lt.color = Color.white;
+                lt.color = new Color(1f, 0.93f, 0.78f); // warm sickly fluorescent tint
                 lt.shadows = LightShadows.None;
                 prefabs["Ceiling_Light_2x2"] = SaveAsPrefab(root);
             }
@@ -235,7 +245,7 @@ namespace WhiteBoxKit
             // Pillar : root pivot = bottom-center
             {
                 var root = NewRoot("Pillar");
-                AddBoxPart(root, "Mesh", new Vector3(0.5f, WallHeight, 0.5f), new Vector3(0, WallHeight / 2f, 0), MatStructure);
+                AddBoxPart(root, "Mesh", new Vector3(0.5f, WallHeight, 0.5f), new Vector3(0, WallHeight / 2f, 0), MatWall);
                 prefabs["Pillar"] = SaveAsPrefab(root);
             }
 

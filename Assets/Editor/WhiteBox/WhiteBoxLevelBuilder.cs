@@ -90,7 +90,7 @@ namespace WhiteBoxKit
 
         static void SetupLighting(Scene scene)
         {
-            Color neutral = new Color(0.35f, 0.35f, 0.35f);
+            Color neutral = new Color(0.42f, 0.38f, 0.27f); // warm backrooms ambient, not neutral gray
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = neutral;
             RenderSettings.ambientSkyColor = neutral;
@@ -309,11 +309,9 @@ namespace WhiteBoxKit
             var desk = SpawnLocal(P["Desk"], r.contentGroup, new Vector3(2f, 0, 2f), Quaternion.Euler(0, 15f, 0));
             var decal = SpawnLocal(P["Trace_Decal"], r.contentGroup, new Vector3(0, 0, -0.8f), Quaternion.identity);
             decal.transform.localScale = new Vector3(1.4f, 1f, 0.7f);
-            CreateLabel("CLEAN PATCH", decal.transform, new Vector3(0, 0.6f, 0), r.contentGroup, r.instance.position);
 
             var drag = SpawnLocal(P["Trace_Decal"], r.contentGroup, new Vector3(1f, 0, 0.2f), Quaternion.Euler(0, 35f, 0));
             drag.transform.localScale = new Vector3(0.3f, 1f, 1.6f);
-            CreateLabel("DRAG MARK", drag.transform, new Vector3(0, 0.4f, 0), r.contentGroup, r.instance.position);
 
             SpawnLocal(P["Chair"], r.contentGroup, new Vector3(-1.8f, 0, -1.5f), Quaternion.Euler(0, 60f, 0));
             SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(-2f, 0, 2f), Quaternion.identity);

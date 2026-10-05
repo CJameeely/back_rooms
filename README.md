@@ -2,7 +2,12 @@
 
 第一人称环境解谜游戏《The Last Light》的白盒(white-box)原型。玩家在一个无限重复、灯光均匀过亮的研究室阈限空间(Backrooms 式)里,通过移动光源、读取人类痕迹,重建一位研究者离开前的最后步骤。
 
-这个仓库目前只包含**白盒关卡**:验证尺度、动线和可读性用的灰模场景,不含美术、音效或最终玩法脚本。整个关卡(房间、家具、贴花、文字标签)是**用编辑器脚本程序化生成的**,不是手工在 Scene 里摆出来的——这一点直接决定了你该怎么改关卡,见下面「如何修改关卡」。
+整个关卡(房间、家具、贴花、文字标签、乃至房间1的玩法机关)都是**用编辑器脚本程序化生成的**,不是手工在 Scene 里摆出来的——这一点直接决定了你该怎么改东西,见下面「如何修改关卡」。目前状态:
+
+- **9 个白盒房间**(灰模级别,验证尺度/动线/可读性),整体刷了一层 Backrooms 风格的配色。
+- **房间1 是真正可玩的密室**:找 4 条线索拼 4 位密码,输对开门获胜,倒计时灯光熄灭判负。
+- **Title → 关卡 → End** 三场景流程跑通,有胜利/失败两种结局。
+- 其余 8 个房间仍是纯白盒(没有玩法),用来走查空间关系。
 
 ## 技术栈
 
@@ -10,90 +15,126 @@
 |---|---|---|
 | 引擎 | Unity (Unity 6 / Tuanjie) | `6000.6.0f1` |
 | 渲染管线 | Universal Render Pipeline (URP) | `com.unity.render-pipelines.universal` 17.6.0 |
-| 输入 | Unity Input System | `com.unity.inputsystem` 1.20.0 |
-| UI / 文字 | TextMeshPro(内置于 `com.unity.ugui`) | 2.6.0 |
+| 输入 | Unity Input System(**仅新版**,Active Input Handling = Input System Package) | `com.unity.inputsystem` 1.20.0 |
+| UI / 文字 | TextMeshPro(世界空间标签 + 屏幕 UI 两种都用到) | 内置于 `com.unity.ugui` 2.6.0 |
 | 测试 | Unity Test Framework(NUnit,PlayMode) | `com.unity.test-framework` 1.8.0 |
 | 导航(预留,未使用) | AI Navigation | `com.unity.ai.navigation` 2.0.14 |
 | 版本控制 | Git + GitHub,场景/预制体用 **Force Text** 序列化 | — |
 | 编辑器自动化 | 自研 Editor 脚本(`WhiteBoxKit` 命名空间)+ [Unity CLI](https://github.com/cli/cli) `unity` 命令做无头批处理生成/截图/测试 | — |
 
 > 引擎版本必须完全一致(`6000.6.0f1`)。用 Unity Hub 打开项目时如果没有这个版本,会提示安装——直接装,不要用相近版本代替,URP/Input System 的包版本是按这个 Editor 版本锁定的。
+>
+> Input System 是"仅新版"模式(不是 Both),所以**不能用旧版 `Input.GetAxis`/`Input.GetKey`**,新脚本一律用 `Keyboard.current`/`Mouse.current`,参考 `FirstPersonController.cs`。
 
 ## 目录结构
 
 ```
 Assets/
-  Editor/WhiteBox/          # 关卡生成器(仅编辑器,不会打进构建包)
-    WhiteBoxModules.cs        # 材质 + 15 个基础模块 Prefab + Room_6x6 通用房间壳
-    WhiteBoxLevelBuilder.cs   # 房间关系图 + 每个房间的具体布置 + 相机导览路径生成
-    WhiteBoxScreenshotTool.cs # 批量截图工具
-    WhiteBoxDiagnostics.cs    # 杂项诊断/一次性维护用菜单项
-  Scripts/                   # 运行时脚本(会打进构建包),独立 asmdef: WhiteBox.Runtime
-    CameraTourDriver.cs        # 自动运镜相机(录屏演示用)
+  Editor/WhiteBox/            # 关卡/玩法生成器(仅编辑器,不会打进构建包)
+    WhiteBoxModules.cs          # 材质(含 Backrooms 配色) + 15 个基础模块 Prefab + Room_6x6 房间壳
+    WhiteBoxLevelBuilder.cs     # 房间关系图 + 每个房间的具体布置 + 相机导览路径生成
+    GameplayBuilder.cs          # Step 3:在房间1上叠加玩法(玩家/线索/密码门/计时器)
+    SceneFlowBuilder.cs         # Step 4:生成 Title/End 场景 + 修正 Build Settings
+    UIBuilder.cs                 # 纯编辑器用的 UI 搭建工具函数,Step3/4 共用
+    WhiteBoxScreenshotTool.cs   # 批量截图工具
+    WhiteBoxDiagnostics.cs      # 杂项诊断/一次性维护用菜单项
+  Scripts/
+    CameraTourDriver.cs          # 自动运镜相机(录屏演示用),独立 asmdef: WhiteBox.Runtime
+    Gameplay/                    # 房间1玩法的运行时脚本,同样在 WhiteBox.Runtime asmdef 里
+      IInteractable.cs / CodeManager.cs / FirstPersonController.cs / PlayerInteractor.cs
+      ClueMarker.cs / ClueTracker.cs / Billboard.cs / SlideMover.cs
+      MovableCabinetClue.cs / DrawerClue.cs / PaperCloseupClue.cs / PaperCloseupUI.cs
+      LightSwitchClue.cs / KeypadController.cs / KeypadUI.cs / KeypadDigitButton.cs
+      WinTrigger.cs / LightsOutTimer.cs / GameResult.cs / TitleMenu.cs / EndMenu.cs
   Scenes/
-    WhiteBox_LastLight.unity  # 唯一关卡场景,由 Step 2 全量重新生成
-  StudentTools/FlyCamera/    # 课程提供的飞行相机工具,禁止修改其脚本
+    Title.unity                  # Build index 0,由 Step 4 生成
+    WhiteBox_LastLight.unity     # Build index 1,由 Step 2(几何)+ Step 3(房间1玩法)依次生成
+    End.unity                    # Build index 2,由 Step 4 生成
+  StudentTools/FlyCamera/      # 课程提供的飞行相机工具,禁止修改其脚本
   WhiteBox/
-    Materials/                 # Mat_Structure(灰)/ Mat_Interactive(橙)/ Mat_Clue(青)/ Mat_LightPanel(自发光白)
-    Prefabs/                    # Step 1 生成的所有模块 Prefab + Room_6x6
-  Tests/PlayMode/            # 独立 asmdef: WhiteBox.PlayMode
-    WhiteBoxSmokeTest.cs       # 关卡场景能正常跑几秒不报错
-    CameraTourSmokeTest.cs     # 运镜相机能走完全部 waypoint
+    Materials/                   # Mat_Wall/Mat_Floor/Mat_Ceiling(Backrooms配色)+ Mat_Structure(家具)
+                                  # + Mat_Interactive(橙,可交互)/ Mat_Clue(青,线索)/ Mat_LightPanel(自发光)
+    Prefabs/                      # Step 1 生成的所有模块 Prefab + Room_6x6
+  Tests/PlayMode/               # 独立 asmdef: WhiteBox.PlayMode
+    WhiteBoxSmokeTest.cs           # 关卡场景能正常跑几秒不报错
+    CameraTourSmokeTest.cs         # 运镜相机能走完全部 waypoint
+    Room1GameplaySmokeTest.cs      # 完整模拟一遍通关流程 + 一遍超时判负流程
+    UIInitialStateTest.cs          # 确认 Keypad/Paper 两个 UI 面板默认是关闭的
 ```
 
 `Screenshots/` 由截图工具生成,已 `.gitignore` 掉(是构建产物,不是源内容)。
 
-## 如何修改关卡(重要,先读这个)
+## 如何修改关卡 / 玩法(重要,先读这个)
 
-**不要在 Scene 视图里手动拖东西摆房间。** 场景是由代码生成的,任何手动改动会在下次跑生成器时被整体覆盖。真正的"源文件"是:
+**不要在 Scene 视图里手动拖东西摆房间或摆玩法机关。** 场景是由代码生成的,任何手动改动会在下次跑生成器时被整体覆盖。真正的"源文件"是:
 
 - `Assets/Editor/WhiteBox/WhiteBoxLevelBuilder.cs` 里的 `BuildGraph()`(房间图:顺序、方向、连接)和各个 `Populate_*` 方法(每个房间放什么家具/贴花/标签)。
-- `Assets/Editor/WhiteBox/WhiteBoxModules.cs` 里的模块定义(如果要新增一种基础模块,比如新的家具形状)。
+- `Assets/Editor/WhiteBox/GameplayBuilder.cs`(房间1的四条线索、键盘、门、计时器怎么摆、怎么互相引用)。
+- `Assets/Editor/WhiteBox/WhiteBoxModules.cs` 里的模块定义(新增一种基础模块,比如新的家具形状)。
 
-改完代码后,在 Unity 菜单里跑:
+改完代码后,在 Unity 菜单里按顺序跑(每一步都依赖前一步的产物):
 
 1. `Tools > WhiteBox > Step 1 - Import FlyCam + Generate Prefabs`(只有新增/改了模块或材质时才需要重跑)
-2. `Tools > WhiteBox > Step 2 - Build Level Scene`(**每次改了房间图或房间内容都要重跑**,会整体重建并覆盖保存 `WhiteBox_LastLight.unity`)
-3. `Tools > WhiteBox > Capture Screenshots`(可选,更新参考截图)
+2. `Tools > WhiteBox > Step 2 - Build Level Scene`(**改了房间图/房间内容都要重跑**——注意这一步是整场景重建,会把房间1的玩法也一起冲掉)
+3. `Tools > WhiteBox > Step 3 - Build Room1 Gameplay`(**只要跑过 Step 2,就必须接着跑这一步**,把玩家/线索/密码门/计时器重新叠加回房间1;可以反复重跑,自己会先清掉上次生成的玩法物体再重建,不会越堆越多)
+4. `Tools > WhiteBox > Step 4 - Build Title & End Scenes`(只有改了标题页/结束页的文案或按钮逻辑时才需要重跑;会顺带重新整理 Build Settings)
+5. `Tools > WhiteBox > Capture Screenshots`(可选,更新参考截图)
 
-也可以不开界面,用命令行无头批处理(CI 或远程机器上常用):
+也可以不开界面,用命令行无头批处理(CI 或远程机器上常用),方法名对应上面四步:
 
 ```bash
-unity run "<项目路径>" --editor-version 6000.6.0f1 \
-  -- -executeMethod WhiteBoxKit.WhiteBoxModules.Step1_ImportAndGeneratePrefabs
-
-unity run "<项目路径>" --editor-version 6000.6.0f1 \
-  -- -executeMethod WhiteBoxKit.WhiteBoxLevelBuilder.Step2_BuildLevel
-
-unity run "<项目路径>" --editor-version 6000.6.0f1 \
-  -- -executeMethod WhiteBoxKit.WhiteBoxScreenshotTool.CaptureScreenshots
+unity run "<项目路径>" --editor-version 6000.6.0f1 -- -executeMethod WhiteBoxKit.WhiteBoxModules.Step1_ImportAndGeneratePrefabs
+unity run "<项目路径>" --editor-version 6000.6.0f1 -- -executeMethod WhiteBoxKit.WhiteBoxLevelBuilder.Step2_BuildLevel
+unity run "<项目路径>" --editor-version 6000.6.0f1 -- -executeMethod WhiteBoxKit.GameplayBuilder.Step3_BuildRoom1Gameplay
+unity run "<项目路径>" --editor-version 6000.6.0f1 -- -executeMethod WhiteBoxKit.SceneFlowBuilder.Step4_BuildTitleAndEndScenes
 ```
 
 ### 房间图怎么组织的
 
 `WhiteBoxLevelBuilder.BuildGraph()` 用一串 `Step(kind, direction, label)` 描述一条线性路径,从 `Start` 出发,每一步往 东/南/西/北 挪一格(1 格 = 8m,6m 房间 + 2m 走廊)。`ComputeDoors()` 会根据这条路径自动算出每个房间该在哪面墙开门,`InstantiateRooms()`/`InstantiateCorridors()` 负责真正摆 Prefab。新增房间只需要在 `main` 列表里插一行 `Step`,不用手动算坐标或摆墙。
 
-九个房间当前顺序:`Start → R1 Displaced Object → R2 Locked Counter → E1 Repeat(藏钥匙) → R3 Pattern+Empty Slot → R4 Portable Light → R5 Aftermath → R6 Mirror+False Centre → R7 Final Alignment`。
+九个房间当前顺序:`Start → R1 Displaced Object(可玩)→ R2 Locked Counter → E1 Repeat(藏钥匙)→ R3 Pattern+Empty Slot → R4 Portable Light → R5 Aftermath → R6 Mirror+False Centre → R7 Final Alignment`。
 
 ### 白盒美术规则(别破坏)
 
-- 只用三种材质区分含义:结构(灰 `Mat_Structure`)/ 可交互谜题物件(橙 `Mat_Interactive`)/ 关键痕迹线索(青 `Mat_Clue`)。天花板发光面板用第四种纯功能性材质 `Mat_LightPanel`,不算在规则内。
+- 结构类用 Backrooms 配色三件套:`Mat_Wall`(脏黄墙)/`Mat_Floor`(棕黄地毯)/`Mat_Ceiling`(米白天花板);家具用 `Mat_Structure`(做旧灰褐);天花板发光面板用 `Mat_LightPanel`。
+- 可交互物件(柜子、抽屉、纸、开关、键盘、门)统一用 `Mat_Interactive`(橙);关键痕迹/线索文字用 `Mat_Clue`(青)。
 - 所有位置对齐 0.5m 网格。
-- 每个谜题物件上方用 `WhiteBoxModules.CreateLabel(...)` 生成一个 3D TextMeshPro 标签写名字。
+- 只用简单几何体组合(长方体/圆柱体)表达形状,不导入模型/贴图——想让一个物件更好认,靠"换个更有辨识度的几何体组合"(比如键盘=底板+3x3按钮网格),不是靠贴一行解释性文字上去。房间1之前堆过"CLEAN PATCH"/"DRAG MARK"这类纯装饰性文字标签,实测在真实游玩视角下很容易显得杂乱,现已移除——**白盒阶段的说明性标签和房间1这种会被真人玩的空间,文字密度不是一回事**,后者要克制。
 
-## 相机
+## 房间1 玩法(Step 3 / `GameplayBuilder.cs`)
 
-场景里有两套相机,**默认只有一个是激活的**:
+开局随机生成一个 4 位密码,由 `CodeManager` 统一管理。密码门旁键盘面板上 4 个输入格,从左到右固定对应 ● 圆形 / ▲ 三角 / ■ 方形 / | 竖线,房间里 4 条线索各自展示"一个固定符号 + 当局随机的一位数字":
 
-- **FlyCamera**(`Assets/StudentTools/FlyCamera/`,课程发的工具,脚本禁止改):默认激活,自由飞行探索用。默认速度 8 m/s,可用鼠标滚轮实时调(建议 6m 房间用 2~3 更好判断尺度),它本身**没有碰撞**,穿墙是设计如此,不是 bug。
-- **TourCamera**(`CameraTour/TourCamera`,`CameraScripts/CameraTourDriver.cs` 驱动):默认**未激活**。勾选激活后会在自己的 `Awake()` 里自动关掉 FlyCamera,然后按房间生成顺序自动飞过全部房间,每间停留 ~2.5s 并左右扫视,适合录屏演示用。参数(速度/停留时间/扫视角度/是否循环)都在 Inspector 里,不用改代码。
+1. **●(圆形)移动的柜子**:看向柜子按 E,柜子滑回墙角的清洁印子位置,露出原本被挡住的墙面文字。
+2. **▲(三角)抽屉里的纸**:按 E 拉开抽屉,再看向纸按 E,弹出全屏特写面板(`PaperCloseupUI`)。
+3. **■(方形)柱子背面**:纯被动线索,没有交互提示,必须绕到柱子背对入口/房间中心的那一面才能看到——没有任何实体改变状态,看不看得到完全取决于柱子本身挡不挡视线。
+4. **|(竖线)关掉一盏灯**:按 E 切换离开关最近的一盏顶灯,文字透明度随灯光渐变(亮着时几乎看不见)。
+
+键盘(`KeypadController`/`KeypadUI`)按 E 打开,错误会左右抖动并清空,正确则密码门(`SlideMover` 驱动)滑开,门后触发区(`WinTrigger`)判定胜利。`LightsOutTimer` 独立计时(默认 180s,可在 Inspector 关闭或调参),时间耗尽前依次闪烁/熄灯/黑屏,黑屏 2s 后判负——全程不显示倒计时数字。`GameResult`(静态类)把输赢结果和用时带去 `End.unity` 显示。
+
+四条线索的世界空间文字(柜子揭示文字、柱子背面文字、开关旁文字)都挂了 `Billboard.cs`,会一直转向摄像机,不会出现"从某些角度看文字是反的"的问题——这不影响柱子那条线索的"必须绕背面"机制,因为挡不挡得住看是由柱子的实体碰撞体决定的,跟文字朝哪转无关。
+
+## 相机 / 玩家
+
+场景里有三套可控对象,**默认只有玩家是激活的**:
+
+- **PlayerController**(`FirstPersonController` + `PlayerInteractor`):CharacterController 驱动,WASD 移动 + 鼠标视角 + 重力,**默认激活**,出生在房间1南侧入口附近面朝房间中心。交互统一按 E,射线检测 2m 内的 `IInteractable`。
+- **FlyCamera**(`Assets/StudentTools/FlyCamera/`,课程发的工具,脚本禁止改):**默认禁用**(以前是默认开的,房间1接入真实玩法后改成了默认关,避免和 PlayerController 抢控制权)。需要自由飞行走查整个白盒时,手动在 Hierarchy 里把它勾选为激活、同时关掉 PlayerController。默认速度 8 m/s,无碰撞,穿墙是设计如此。
+- **TourCamera**(`CameraTour/TourCamera`,`CameraTourDriver.cs` 驱动):默认未激活。勾选激活后会在自己的 `Awake()` 里自动关掉 FlyCamera(但不会管 PlayerController,建议手动也关掉),按房间生成顺序自动飞过全部房间,适合录屏演示整体白盒。参数都在 Inspector 里。
+
+## 场景流程
+
+`Title.unity`(Start 按钮)→ `WhiteBox_LastLight.unity`(房间1游玩)→ `End.unity`(按 `GameResult.Won` 显示胜利/失败文案,Replay 回到关卡 / Title 回标题页)。Build Settings 顺序已固定为 Title(0)/关卡(1)/End(2),由 `SceneFlowBuilder` 维护,不要手动改。
 
 ## 测试
 
-`Assets/Tests/PlayMode/` 下两个 PlayMode 冒烟测试:
+`Assets/Tests/PlayMode/` 下四个 PlayMode 测试,核心逻辑改动后建议都跑一遍:
 
-- `WhiteBoxSmokeTest`:加载关卡场景跑几秒,确认没有运行时报错,`Rooms`/`Player` 分组都存在。
-- `CameraTourSmokeTest`:激活 TourCamera,确认它能在合理时间内走完全部 9 个 waypoint,并且正确禁用了 FlyCamera。
+- `WhiteBoxSmokeTest`:加载关卡场景跑几秒,确认没有运行时报错。
+- `CameraTourSmokeTest`:激活 TourCamera,确认能在合理时间内走完全部 9 个 waypoint,且正确禁用 FlyCamera。
+- `Room1GameplaySmokeTest`:**完整模拟一次通关**(逐个触发四条线索、读取真实密码、键盘输入、走过胜利触发区,断言跳转到 End 且 `GameResult.Won=true`)和**一次超时判负**(把 `LightsOutTimer` 时长压缩到 1 秒,断言黑屏后跳转 End 且 `GameResult.Won=false`)。
+- `UIInitialStateTest`:断言 KeypadUI/PaperCloseupUI 两个面板刚加载时是关闭的。
 
 跑测试:Unity 里 `Window > General > Test Runner`,或命令行:
 
@@ -111,11 +152,13 @@ unity test "<项目路径>" --editor-version 6000.6.0f1 --mode PlayMode --output
   git config --global merge.unityyamlmerge.driver "'/Applications/Unity/Hub/Editor/<你的版本>/Unity.app/Contents/Resources/UnityYAMLMerge' merge -p %O %B %A %A"
   ```
   `.gitattributes` 里已经把这些文件类型标了 `merge=unityyamlmerge`,配好本地 driver 才会生效,没配也不影响正常使用(会退回普通合并)。
-- 关卡场景冲突的正确解法通常不是手动合并 YAML,而是**两边都重新跑一遍 `Step 2`**——因为场景是生成出来的,冲突往往意味着两人同时改了 `WhiteBoxLevelBuilder.cs` 里不同的房间,先合好那份 C# 代码,再重新生成场景覆盖掉冲突的 `.unity` 文件。
+- `WhiteBox_LastLight.unity` 冲突的正确解法通常不是手动合并 YAML,而是**重新跑一遍 Step 2 + Step 3**——场景是生成出来的,冲突往往意味着两人同时改了 `WhiteBoxLevelBuilder.cs`/`GameplayBuilder.cs` 里不同的部分,先合好那两份 C# 代码,再重新生成场景覆盖掉冲突的 `.unity` 文件。`Title.unity`/`End.unity` 同理对应 `SceneFlowBuilder.cs`。
+- 新增运行时脚本放 `Assets/Scripts/` 或其子目录,会自动归入 `WhiteBox.Runtime` asmdef;新增 PlayMode 测试放 `Assets/Tests/PlayMode/`,归入 `WhiteBox.PlayMode` asmdef。两个 asmdef 都显式列了 `Unity.TextMeshPro`/`Unity.InputSystem` 引用——如果新脚本报 "TMPro/InputSystem 命名空间找不到",先检查对应 asmdef 的 `references` 而不是怀疑包没装。
 - 建议分支模型:`main` 保持随时可运行,日常开发用 `feature/<你的内容>` 分支,提 PR 合并。
 
 ## 已知局限 / 后续可以做的
 
-- FlyCamera 无碰撞,是工具本身的设计,不是关卡的问题;如果之后需要"不能穿墙"的效果,得另外做一个带 `CharacterController` 的步行控制器,而不是改 FlyCamera。
-- 3D 文字标签的朝向是按"背对房间中心"的启发式算出来的,极少数从非常规角度(比如隔着门看邻近房间)看会显示镜像文字,不影响正常近距离游玩。
-- 目前只保留了一个"近乎相同的重复房间"(E1),18→9 精简房间数量时为了给每个房间塞更多细节,牺牲了原设计里"多个重复房间考验玩家能否察觉细微差异"的测试强度,如果后续要恢复这个机制,在 `BuildGraph()` 里加几个 `RoomKind.Repeat` 步骤,并在 `Populate_Repeat` 里给每个实例传不同的道具摆放变体就行。
+- FlyCamera 无碰撞,是工具本身的设计,不是关卡的问题。
+- 其余 8 个非房间1的房间里,装饰性/说明性文字标签仍然是旧的"背对房间中心"朝向启发式,极少数从非常规角度看会显示镜像文字——房间1的四条线索文字已经用 `Billboard.cs` 解决了这个问题,其余房间因为不涉及实际游玩,暂未处理,如果要修可以把 `Billboard` 组件也挂到对应标签上。
+- 目前只保留了一个"近乎相同的重复房间"(E1);18→9 精简房间数量、以及后来给每个房间塞更多细节时,牺牲了原设计里"多个重复房间考验玩家能否察觉细微差异"的测试强度,如果后续要恢复,在 `BuildGraph()` 里加几个 `RoomKind.Repeat` 步骤,并在 `Populate_Repeat` 里给每个实例传不同的道具摆放变体就行。
+- 房间1之外的 8 个房间还没有玩法,只是走查用的白盒——如果要扩展成多房间关卡,`GameplayBuilder.cs` 目前的写法是硬编码找 `R1_Displaced` 房间,扩展到其他房间需要先把里面「找房间 → 叠加玩法」的逻辑抽成可复用的参数化方法。

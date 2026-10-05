@@ -1,6 +1,10 @@
 {
     "name": "WhiteBox.Runtime",
-    "references": [],
+    "references": [
+        "Unity.TextMeshPro",
+        "Unity.InputSystem",
+        "Unity.ugui"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
