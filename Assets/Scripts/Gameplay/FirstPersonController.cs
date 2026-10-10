@@ -25,6 +25,8 @@ public class FirstPersonController : MonoBehaviour
     float _yaw, _pitch;
     float _verticalVelocity;
     bool _inputEnabled = true;
+    int _resumeFrame = -1;
+    public bool InputEnabled => _inputEnabled && Time.frameCount > _resumeFrame;
 
     void Awake()
     {
@@ -43,13 +45,14 @@ public class FirstPersonController : MonoBehaviour
     public void SetInputEnabled(bool enabled)
     {
         _inputEnabled = enabled;
+        if (enabled) _resumeFrame = Time.frameCount; // Do not reuse the key press that closed an overlay.
         Cursor.lockState = enabled ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !enabled;
     }
 
     void Update()
     {
-        if (!_inputEnabled || Keyboard.current == null) return;
+        if (!InputEnabled || Keyboard.current == null) return;
 
         // Look
         if (Mouse.current != null)

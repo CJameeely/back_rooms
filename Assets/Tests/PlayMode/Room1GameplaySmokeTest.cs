@@ -29,6 +29,42 @@ public class Room1GameplaySmokeTest
     }
 
     [UnityTest]
+    public IEnumerator ExitKeypadIsReachableFromInsideRoom()
+    {
+        yield return SceneManager.LoadSceneAsync("WhiteBox_LastLight");
+        yield return null;
+        var keypad = Find("Gameplay_Keypad").transform;
+        Vector3 origin = keypad.position + keypad.forward * 1.25f;
+        Assert.IsTrue(Physics.Raycast(origin, -keypad.forward, out RaycastHit hit, 2f));
+        Assert.IsNotNull(hit.collider.GetComponentInParent<KeypadController>(),
+            "Player's interaction ray must hit keypad rather than the wall.");
+        Assert.Greater(keypad.position.y, 1f, "Keypad must be above floor level.");
+        var slab = Find("Gameplay_Door").transform.Find("Slab").GetComponent<Collider>();
+        Assert.That(slab.bounds.min.y, Is.EqualTo(0f).Within(0.05f));
+        Assert.Greater(slab.bounds.max.y, 2f, "Closed door must fill the doorway.");
+    }
+
+    [UnityTest]
+    public IEnumerator IncorrectCodeCanBeClosedAndRetried()
+    {
+        yield return SceneManager.LoadSceneAsync("WhiteBox_LastLight");
+        yield return null;
+        var keypad = KeypadUI.Instance;
+        keypad.Open();
+        for (int i = 0; i < 4; i++)
+            keypad.PressDigit((CodeManager.Instance.GetDigit((ClueSymbol)i) + 1) % 10);
+        keypad.PressConfirm();
+        Assert.IsFalse(keypad.Solved);
+        keypad.Close(); // Closing during rejection must cancel its coroutine and reset the panel.
+        keypad.Open();
+        for (int i = 0; i < 4; i++) keypad.PressDigit(CodeManager.Instance.GetDigit((ClueSymbol)i));
+        keypad.PressConfirm();
+        yield return null;
+        Assert.IsTrue(keypad.Solved);
+        Assert.IsTrue(FirstPersonController.Instance.InputEnabled);
+    }
+
+    [UnityTest]
     public IEnumerator FullWinPlaythrough_ReachesEndSceneWithWin()
     {
         yield return SceneManager.LoadSceneAsync("WhiteBox_LastLight", LoadSceneMode.Single);
@@ -121,6 +157,14 @@ public class Room1GameplaySmokeTest
 
         Assert.AreEqual("End", SceneManager.GetActiveScene().name, "Walking through the win trigger should load End.");
         Assert.IsTrue(GameResult.Won, "GameResult.Won should be true after winning.");
+        yield return null;
+        Assert.AreEqual(CursorLockMode.None, Cursor.lockState, "End screen must release the mouse.");
+        Object.FindFirstObjectByType<EndMenu>().OnReplayPressed();
+        yield return null;
+        yield return null;
+        Assert.AreEqual("WhiteBox_LastLight", SceneManager.GetActiveScene().name);
+        Assert.IsFalse(KeypadUI.Instance.Solved, "Replay must reset the locked door.");
+        Assert.IsFalse(PaperCloseupUI.Instance.IsOpen);
     }
 
     [UnityTest]
@@ -147,5 +191,12 @@ public class Room1GameplaySmokeTest
 
         Assert.AreEqual("End", SceneManager.GetActiveScene().name, "Timing out should load End.");
         Assert.IsFalse(GameResult.Won, "GameResult.Won should be false after timing out.");
+        yield return null;
+        Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
+        Object.FindFirstObjectByType<EndMenu>().OnTitlePressed();
+        yield return null;
+        yield return null;
+        Assert.AreEqual("Title", SceneManager.GetActiveScene().name);
+        Assert.IsNotNull(GameObject.Find("StartButton"));
     }
 }

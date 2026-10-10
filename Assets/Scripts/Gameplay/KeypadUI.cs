@@ -23,6 +23,9 @@ public class KeypadUI : MonoBehaviour
     public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
     readonly List<int> _entered = new List<int>();
+    static readonly Key[] DigitKeys = { Key.Digit0, Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5, Key.Digit6, Key.Digit7, Key.Digit8, Key.Digit9 };
+    static readonly Key[] NumpadKeys = { Key.Numpad0, Key.Numpad1, Key.Numpad2, Key.Numpad3, Key.Numpad4, Key.Numpad5, Key.Numpad6, Key.Numpad7, Key.Numpad8, Key.Numpad9 };
+    bool _rejecting;
     RectTransform _panelRect;
     Vector2 _panelBasePos;
 
@@ -42,6 +45,7 @@ public class KeypadUI : MonoBehaviour
     public void Open()
     {
         if (Solved || IsOpen) return;
+        if (PaperCloseupUI.Instance != null && PaperCloseupUI.Instance.IsOpen) PaperCloseupUI.Instance.Close();
         panelRoot.SetActive(true);
         _entered.Clear();
         RefreshDisplay();
@@ -50,27 +54,30 @@ public class KeypadUI : MonoBehaviour
 
     public void Close()
     {
+        StopAllCoroutines();
+        _rejecting = false;
+        if (_panelRect != null) _panelRect.anchoredPosition = _panelBasePos;
         panelRoot.SetActive(false);
         FirstPersonController.Instance.SetInputEnabled(true);
     }
 
     public void PressDigit(int digit)
     {
-        if (!IsOpen || _entered.Count >= 4) return;
+        if (!IsOpen || _rejecting || digit < 0 || digit > 9 || _entered.Count >= 4) return;
         _entered.Add(digit);
         RefreshDisplay();
     }
 
     public void PressClear()
     {
-        if (!IsOpen) return;
+        if (!IsOpen || _rejecting) return;
         _entered.Clear();
         RefreshDisplay();
     }
 
     public void PressConfirm()
     {
-        if (!IsOpen || _entered.Count != 4) return;
+        if (!IsOpen || _rejecting || _entered.Count != 4) return;
 
         if (CodeManager.Instance.Validate(_entered.ToArray()))
         {
@@ -94,6 +101,7 @@ public class KeypadUI : MonoBehaviour
 
     IEnumerator ShakeThenClear()
     {
+        _rejecting = true;
         if (_panelRect != null)
         {
             float duration = 0.35f, t = 0f, magnitude = 18f, frequency = 28f;
@@ -109,11 +117,18 @@ public class KeypadUI : MonoBehaviour
         }
         _entered.Clear();
         RefreshDisplay();
+        _rejecting = false;
     }
 
     void Update()
     {
         if (!IsOpen || Keyboard.current == null) return;
-        if (Keyboard.current.escapeKey.wasPressedThisFrame) Close();
+        var kb = Keyboard.current;
+        if (kb.escapeKey.wasPressedThisFrame) { Close(); return; }
+        for (int digit = 0; digit <= 9; digit++)
+            if (kb[DigitKeys[digit]].wasPressedThisFrame ||
+                kb[NumpadKeys[digit]].wasPressedThisFrame) PressDigit(digit);
+        if (kb.backspaceKey.wasPressedThisFrame || kb.deleteKey.wasPressedThisFrame) PressClear();
+        if (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame) PressConfirm();
     }
 }

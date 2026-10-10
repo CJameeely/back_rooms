@@ -33,21 +33,26 @@ namespace WhiteBoxKit
             UIBuilder.AddPanel(canvas.transform, "Background", new Color(0.05f, 0.05f, 0.05f, 1f));
 
             UIBuilder.AddText(canvas.transform, "GameTitle", "THE LAST LIGHT", 64, TextAlignmentOptions.Center,
-                Color.white, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 160), new Vector2(900, 100));
+                Color.white, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 240), new Vector2(900, 100));
 
             UIBuilder.AddText(canvas.transform, "Subtitle",
                 "Recover the traces a researcher left behind before the lights go out.", 24,
                 TextAlignmentOptions.Center, new Color(0.8f, 0.8f, 0.8f),
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 90), new Vector2(900, 60));
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 160), new Vector2(900, 60));
 
-            UIBuilder.AddText(canvas.transform, "Credits", "[Team member names]", 20, TextAlignmentOptions.Center,
+            UIBuilder.AddText(canvas.transform, "Credits", "Created by CJ Evan", 20, TextAlignmentOptions.Center,
                 new Color(0.5f, 0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 60), new Vector2(900, 40));
+
+            UIBuilder.AddText(canvas.transform, "Instructions",
+                "Find four symbol clues. Match their digits on the exit keypad.\nWalk through the unlocked door to win. You have 3 minutes.\nFlickering lights warn you that time is running out.\n\nWASD  Move    |    Mouse  Look    |    E  Interact\nKeypad: 0-9 / click    |    Enter  Confirm    |    Esc  Close", 25,
+                TextAlignmentOptions.Center, new Color(0.8f, 0.8f, 0.8f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(1100, 240));
 
             GameObject managerGO = new GameObject("TitleMenu");
             TitleMenu menu = managerGO.AddComponent<TitleMenu>();
 
             var (_, startButton, _) = UIBuilder.AddButton(canvas.transform, "StartButton", "Start",
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -40), new Vector2(220, 70),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -180), new Vector2(220, 70),
                 new Color(1f, 0.45f, 0f), Color.white, 30f);
             UIBuilder.BindClick(startButton, menu, nameof(TitleMenu.OnStartPressed));
 
@@ -61,7 +66,7 @@ namespace WhiteBoxKit
             Canvas canvas = UIBuilder.CreateScreenCanvas("EndCanvas");
             UIBuilder.AddPanel(canvas.transform, "Background", new Color(0.05f, 0.05f, 0.05f, 1f));
 
-            TextMeshProUGUI title = UIBuilder.AddText(canvas.transform, "ResultTitle", "", 52, TextAlignmentOptions.Center,
+            TextMeshProUGUI title = UIBuilder.AddText(canvas.transform, "ResultTitle", "", 42, TextAlignmentOptions.Center,
                 Color.white, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 140), new Vector2(1000, 90));
             TextMeshProUGUI sub = UIBuilder.AddText(canvas.transform, "ResultSub", "", 28, TextAlignmentOptions.Center,
                 new Color(0.8f, 0.8f, 0.8f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 70), new Vector2(900, 60));

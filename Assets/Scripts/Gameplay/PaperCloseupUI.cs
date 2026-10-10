@@ -16,16 +16,20 @@ public class PaperCloseupUI : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
     }
 
+    int _openedFrame;
+
     public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
     public void Open(ClueSymbol symbol, int digit)
     {
+        if (KeypadUI.Instance != null && KeypadUI.Instance.IsOpen) return;
+        _openedFrame = Time.frameCount;
         panelRoot.SetActive(true);
         symbolDigitText.text = $"{CodeManager.SymbolGlyph(symbol)}   {digit}";
         FirstPersonController.Instance.SetInputEnabled(false);
     }
 
-    void Close()
+    public void Close()
     {
         panelRoot.SetActive(false);
         FirstPersonController.Instance.SetInputEnabled(true);
@@ -33,7 +37,7 @@ public class PaperCloseupUI : MonoBehaviour
 
     void Update()
     {
-        if (!IsOpen || Keyboard.current == null) return;
+        if (!IsOpen || Time.frameCount == _openedFrame || Keyboard.current == null) return;
         if (Keyboard.current.eKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame)
             Close();
     }

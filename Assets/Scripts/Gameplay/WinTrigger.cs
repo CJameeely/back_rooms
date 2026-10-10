@@ -13,6 +13,9 @@ public class WinTrigger : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
+        if (KeypadUI.Instance == null || !KeypadUI.Instance.Solved) return;
+        var timer = FindFirstObjectByType<LightsOutTimer>();
+        if (timer != null && timer.HasExpired) return;
         GameResult.Won = true;
         GameResult.ElapsedSeconds = Time.time - GameResult.StartTime;
         SceneManager.LoadScene("End");

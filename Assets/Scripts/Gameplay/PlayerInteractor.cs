@@ -17,6 +17,11 @@ public class PlayerInteractor : MonoBehaviour
     void Update()
     {
         if (playerCamera == null) return;
+        if (FirstPersonController.Instance != null && !FirstPersonController.Instance.InputEnabled)
+        {
+            if (promptText != null) promptText.text = "";
+            return;
+        }
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         bool hitSomething = Physics.Raycast(ray, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Collide);

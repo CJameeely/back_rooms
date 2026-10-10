@@ -9,16 +9,18 @@ public class EndMenu : MonoBehaviour
 
     void Start()
     {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         if (GameResult.Won)
         {
-            titleText.text = "YOU FOUND THE WAY OUT";
+            titleText.text = "YOU WIN — YOU FOUND THE WAY OUT";
             int total = Mathf.Max(0, Mathf.RoundToInt(GameResult.ElapsedSeconds));
             subText.text = $"Time: {total / 60:00}:{total % 60:00}";
         }
         else
         {
-            titleText.text = "THE LIGHTS WENT OUT";
-            subText.text = "";
+            titleText.text = "GAME OVER — THE LIGHTS WENT OUT";
+            subText.text = "Find the four clues and escape before the blackout. Try again.";
         }
     }
 

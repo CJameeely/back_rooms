@@ -25,6 +25,7 @@ public class LightsOutTimer : MonoBehaviour
     public Light linkedLight;
     public LightSwitchClue linkedSwitchClue;
 
+    public bool HasExpired => timerEnabled && _elapsed >= totalDuration;
     float _elapsed;
     bool _flickerStarted, _shutoffStarted, _blackoutStarted;
     readonly HashSet<Light> _off = new HashSet<Light>();
@@ -34,6 +35,9 @@ public class LightsOutTimer : MonoBehaviour
 
     void Start()
     {
+        GameResult.StartTime = Time.time;
+        GameResult.Won = false;
+        GameResult.ElapsedSeconds = 0f;
         if (!timerEnabled) { enabled = false; return; }
 
         _shutoffOrder = roomLights.OrderBy(_ => Random.value).ToList();

@@ -158,7 +158,8 @@ namespace WhiteBoxKit
         {
             RectTransform row = UIBuilder.AddRect(canvasT, "ClueTracker");
             row.anchorMin = row.anchorMax = new Vector2(0f, 0f);
-            row.anchoredPosition = new Vector2(90, 60);
+            row.pivot = Vector2.zero;
+            row.anchoredPosition = new Vector2(40, 30);
             row.sizeDelta = new Vector2(400, 60);
 
             ClueTracker tracker = row.gameObject.AddComponent<ClueTracker>();
@@ -167,7 +168,7 @@ namespace WhiteBoxKit
             {
                 TextMeshProUGUI slot = UIBuilder.AddText(row, $"Slot_{i}", CodeManager.SymbolGlyph((ClueSymbol)i), 30,
                     TextAlignmentOptions.Center, new Color(0f, 0.85f, 0.9f),
-                    Vector2.zero, Vector2.zero, new Vector2(i * 80, 0), new Vector2(70, 50));
+                    Vector2.zero, Vector2.zero, new Vector2(35 + i * 80, 25), new Vector2(70, 50));
                 tracker.slots[i] = slot;
             }
             return tracker;
@@ -180,8 +181,9 @@ namespace WhiteBoxKit
             Transform cabinet = content.Find("Desk");
             if (cabinet == null) { Debug.LogWarning("[WhiteBox] Cabinet (Desk) not found in Room 1."); return; }
 
-            cabinet.gameObject.AddComponent<SlideMover>();
-            MovableCabinetClue clue = cabinet.gameObject.AddComponent<MovableCabinetClue>();
+            if (cabinet.GetComponent<SlideMover>() == null) cabinet.gameObject.AddComponent<SlideMover>();
+            MovableCabinetClue clue = cabinet.GetComponent<MovableCabinetClue>();
+            if (clue == null) clue = cabinet.gameObject.AddComponent<MovableCabinetClue>();
             clue.restingLocalPosition = new Vector3(0f, 0f, -0.8f); // matches the CLEAN PATCH decal
 
             // Wall text hidden behind the cabinet's current corner spot; only switched on once
@@ -234,7 +236,7 @@ namespace WhiteBoxKit
                 TextAlignmentOptions.Center, Color.white,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 80), new Vector2(600, 100));
 
-            string[] placeholderLines = { "..........................", "..... .......... .....", ".......... ....... ....." };
+            string[] placeholderLines = { "One symbol. One digit.", "Match the symbols on the exit keypad.", "E / Esc to close" };
             for (int i = 0; i < placeholderLines.Length; i++)
                 UIBuilder.AddText(panel, $"Note_{i}", placeholderLines[i], 26, TextAlignmentOptions.Center,
                     new Color(0.6f, 0.6f, 0.6f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
@@ -280,7 +282,7 @@ namespace WhiteBoxKit
             GameObject switchGO = new GameObject("Gameplay_Switch");
             switchGO.transform.SetParent(content, false);
             switchGO.transform.localPosition = new Vector3(-RoomHalf + 0.05f, 1.2f, -1f);
-            switchGO.transform.localRotation = Quaternion.Euler(0, -90, 0);
+            switchGO.transform.localRotation = Quaternion.Euler(0, 90, 0);
 
             // Reads as an actual light switch: a gray backing plate with a small orange toggle
             // flicked to one side, rather than a single flat colored slab.
@@ -348,7 +350,7 @@ namespace WhiteBoxKit
             // parent/child, so the slab's own non-uniform scale can't warp the handle.
             GameObject seal = new GameObject("Gameplay_Door");
             seal.transform.SetParent(content, false);
-            seal.transform.position = doorPos + outward * 0.02f;
+            seal.transform.position = doorPos + outward * 0.02f + Vector3.up * (DoorGapHeight / 2f);
             seal.transform.rotation = doorRot;
             SlideMover doorMover = seal.AddComponent<SlideMover>();
 
@@ -361,7 +363,7 @@ namespace WhiteBoxKit
             GameObject handle = GameObject.CreatePrimitive(PrimitiveType.Cube);
             handle.name = "Handle";
             handle.transform.SetParent(seal.transform, false);
-            handle.transform.localPosition = new Vector3(0.3f, 0f, 0.12f);
+            handle.transform.localPosition = new Vector3(0.3f, 0f, -0.12f);
             handle.transform.localScale = new Vector3(0.08f, 0.5f, 0.06f);
             handle.GetComponent<Renderer>().sharedMaterial = MatStructure;
 
@@ -374,8 +376,8 @@ namespace WhiteBoxKit
 
             GameObject keypadRoot = new GameObject("Gameplay_Keypad");
             keypadRoot.transform.SetParent(content, false);
-            keypadRoot.transform.position = keypadPos + outward * 0.015f;
-            keypadRoot.transform.rotation = doorRot;
+            keypadRoot.transform.position = keypadPos - outward * 0.06f + Vector3.up * 1.25f;
+            keypadRoot.transform.rotation = doorRot * Quaternion.Euler(0, 180, 0);
             keypadRoot.AddComponent<KeypadController>();
 
             GameObject backing = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -400,7 +402,7 @@ namespace WhiteBoxKit
             // Win trigger just past the (now open) doorway, into the existing corridor to Room 2.
             GameObject win = new GameObject("Gameplay_WinTrigger", typeof(BoxCollider));
             win.transform.SetParent(content, false);
-            win.transform.position = doorPos + outward * 1.2f;
+            win.transform.position = doorPos + outward * 1.2f + Vector3.up * (DoorGapHeight / 2f);
             win.transform.rotation = doorRot;
             BoxCollider col = win.GetComponent<BoxCollider>();
             col.isTrigger = true;
@@ -460,6 +462,10 @@ namespace WhiteBoxKit
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -450), new Vector2(90, 45),
                 new Color(0.2f, 0.6f, 0.2f), Color.white, 20f);
             UIBuilder.BindClick(confirmBtn, ui, nameof(KeypadUI.PressConfirm));
+            var (_, closeBtn, _) = UIBuilder.AddButton(panel, "Close", "Close",
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(110, -450), new Vector2(90, 45),
+                new Color(0.3f, 0.3f, 0.3f), Color.white, 20f);
+            UIBuilder.BindClick(closeBtn, ui, nameof(KeypadUI.Close));
             // Left active here deliberately: KeypadUI.Awake() needs to run at scene load (to set
             // Instance) before it disables its own panel, matching PaperCloseupUI's pattern. If
             // this object were saved inactive, Awake would never fire and Instance would stay null.
