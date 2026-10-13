@@ -13,6 +13,7 @@ public class PaperCloseupClue : MonoBehaviour, IInteractable
 
     public string InteractionPrompt => "Read note";
     public bool CanInteract => true;
+    public string BlockedReason => null;
 
     void EnsureDigit()
     {

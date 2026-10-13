@@ -90,7 +90,7 @@ namespace WhiteBoxKit
 
         static void SetupLighting(Scene scene)
         {
-            Color neutral = new Color(0.42f, 0.38f, 0.27f); // warm backrooms ambient, not neutral gray
+            Color neutral = new Color(0.42f, 0.45f, 0.5f); // cool clinical-lab ambient
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = neutral;
             RenderSettings.ambientSkyColor = neutral;
@@ -317,18 +317,32 @@ namespace WhiteBoxKit
             SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(-2f, 0, 2f), Quaternion.identity);
         }
 
+        // Room 2 (sample storage): base set dressing only. Room2GameplayBuilder (Step 3b) finds
+        // these by name and wires up the actual puzzle — reader, cabinet lock, ceiling card panel,
+        // matrix screen, stool carrying, exit keypad — same division of labor Populate_Displaced
+        // / GameplayBuilder use for Room 1. "北墙中间" is nudged off dead-center (-1.2 instead of
+        // 0) because x=0 on the north wall is the door opening to Room F — the Wall_Door swap for
+        // that connection already claims that segment, so the screen sits just to its side instead.
         static void Populate_LockedCounter(RoomDef r)
         {
-            var counter = SpawnLocal(P["Counter_Drawer"], r.contentGroup, new Vector3(0, 0, 2.5f), Quaternion.identity);
-            CreateLabel("LOCKED COUNTER", counter.transform, new Vector3(0, 1.3f, 0), r.contentGroup, r.instance.position);
+            var cabinet = SpawnLocal(P["Counter_Drawer"], r.contentGroup, new Vector3(0, 0, -2.5f), Quaternion.identity);
+            cabinet.name = "Gameplay_SampleCabinet";
 
-            SpawnLocal(P["Chair"], r.contentGroup, new Vector3(0, 0, 1.6f), Quaternion.Euler(0, 180f, 0));
+            var stool = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stool.name = "Gameplay_Stool";
+            stool.transform.SetParent(r.contentGroup, false);
+            stool.transform.localPosition = new Vector3(-2f, 0.225f, -2f);
+            stool.transform.localScale = new Vector3(0.4f, 0.45f, 0.4f);
+            stool.GetComponent<Renderer>().sharedMaterial = MatStructure;
 
-            var desk = SpawnLocal(P["Desk"], r.contentGroup, new Vector3(1.8f, 0, -1.6f), Quaternion.Euler(0, -20f, 0));
-            var ledger = SpawnLocal(P["Paper"], desk.transform, new Vector3(0, 0.375f, 0), Quaternion.Euler(0, -10f, 0));
-            CreateLabel("LEDGER", ledger.transform, new Vector3(0, 0.25f, 0), r.contentGroup, r.instance.position);
+            var matrix = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            matrix.name = "Gameplay_DataMatrix";
+            matrix.transform.SetParent(r.contentGroup, false);
+            matrix.transform.localPosition = new Vector3(-1.2f, 1.5f, RoomHalf - 0.03f);
+            matrix.transform.localScale = new Vector3(1.2f, 0.6f, 0.05f);
+            matrix.GetComponent<Renderer>().sharedMaterial = MatStructure;
 
-            SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(-2f, 0, 2f), Quaternion.identity);
+            SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(2f, 0, 2f), Quaternion.identity);
         }
 
         static void Populate_PatternAndSlot(RoomDef r)

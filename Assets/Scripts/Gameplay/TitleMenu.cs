@@ -11,7 +11,7 @@ public class TitleMenu : MonoBehaviour
 
     public void OnStartPressed()
     {
-        GameResult.StartTime = Time.time;
+        GameState.BeginNewGame();
         SceneManager.LoadScene("WhiteBox_LastLight");
     }
 }

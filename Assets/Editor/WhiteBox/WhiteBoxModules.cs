@@ -88,25 +88,36 @@ namespace WhiteBoxKit
 
         // ---------- Materials ----------
 
+        const string TextureFolder = "Assets/KenneyAssets/Textures";
+        static Texture2D GridFine => AssetDatabase.LoadAssetAtPath<Texture2D>(TextureFolder + "/Grid_Fine.png");
+        static Texture2D GridPanel => AssetDatabase.LoadAssetAtPath<Texture2D>(TextureFolder + "/Grid_Panel.png");
+        static Texture2D GridFineDark => AssetDatabase.LoadAssetAtPath<Texture2D>(TextureFolder + "/Grid_Fine_Dark.png");
+        static Texture2D GridPanelDark => AssetDatabase.LoadAssetAtPath<Texture2D>(TextureFolder + "/Grid_Panel_Dark.png");
+
         public static void CreateMaterials()
         {
             Shader lit = Shader.Find("Universal Render Pipeline/Lit");
             if (lit == null) lit = Shader.Find("Standard");
 
-            // Backrooms palette: dingy mustard-yellow walls/carpet, pale cream ceiling, aged
-            // furniture. Interactive (orange) and clue (cyan) stay saturated so they still pop
-            // against the yellow instead of blending in.
-            MatStructure = CreateOrLoadMaterial("Mat_Structure", lit, new Color(0.5f, 0.45f, 0.36f));
-            MatInteractive = CreateOrLoadMaterial("Mat_Interactive", lit, new Color(1f, 0.45f, 0f));
-            MatClue = CreateOrLoadMaterial("Mat_Clue", lit, new Color(0f, 0.85f, 0.9f));
+            // Cold clinical-lab palette: pale cool whites with a real tiling panel/grid texture
+            // (Kenney's CC0 prototype set) so surfaces read as machined panels instead of flat
+            // dead color. Interactive (amber) and clue (ice blue) use the darker grid variant,
+            // tinted, so they look like lit signage panels rather than a flat neon plane.
+            MatStructure = CreateOrLoadMaterial("Mat_Structure", lit, new Color(0.78f, 0.8f, 0.84f), GridFine, new Vector2(2f, 2f));
+            MatInteractive = CreateOrLoadMaterial("Mat_Interactive", lit, new Color(0.95f, 0.55f, 0.2f), GridFineDark, new Vector2(2f, 2f));
+            MatClue = CreateOrLoadMaterial("Mat_Clue", lit, new Color(0.25f, 0.6f, 0.85f), GridFineDark, new Vector2(2f, 2f));
 
-            MatWall = CreateOrLoadMaterial("Mat_Wall", lit, new Color(0.72f, 0.62f, 0.29f));
-            MatFloor = CreateOrLoadMaterial("Mat_Floor", lit, new Color(0.5f, 0.38f, 0.17f));
-            MatCeiling = CreateOrLoadMaterial("Mat_Ceiling", lit, new Color(0.8f, 0.75f, 0.55f));
+            MatWall = CreateOrLoadMaterial("Mat_Wall", lit, new Color(0.82f, 0.85f, 0.9f), GridFine, new Vector2(1.5f, 2f));
+            MatWall.EnableKeyword("_EMISSION");
+            MatWall.SetColor("_EmissionColor", new Color(0.55f, 0.6f, 0.68f) * 0.15f); // faint backlit-glass glow
+            MatWall.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
 
-            MatLightPanel = CreateOrLoadMaterial("Mat_LightPanel", lit, new Color(1f, 0.95f, 0.82f));
+            MatFloor = CreateOrLoadMaterial("Mat_Floor", lit, new Color(0.62f, 0.65f, 0.7f), GridPanel, new Vector2(1f, 1f));
+            MatCeiling = CreateOrLoadMaterial("Mat_Ceiling", lit, new Color(0.88f, 0.9f, 0.94f), GridPanel, new Vector2(1f, 1f));
+
+            MatLightPanel = CreateOrLoadMaterial("Mat_LightPanel", lit, Color.white);
             MatLightPanel.EnableKeyword("_EMISSION");
-            MatLightPanel.SetColor("_EmissionColor", new Color(1f, 0.92f, 0.72f) * 2.2f);
+            MatLightPanel.SetColor("_EmissionColor", Color.white * 2.4f);
             MatLightPanel.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
         }
 
@@ -121,7 +132,7 @@ namespace WhiteBoxKit
             MatCeiling = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Mat_Ceiling.mat");
         }
 
-        static Material CreateOrLoadMaterial(string name, Shader shader, Color color)
+        static Material CreateOrLoadMaterial(string name, Shader shader, Color color, Texture2D tex = null, Vector2? tiling = null)
         {
             string path = MaterialFolder + "/" + name + ".mat";
             Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -135,8 +146,21 @@ namespace WhiteBoxKit
                 mat.shader = shader;
             }
             mat.color = color;
-            if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0f);
-            if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", 0f);
+            // A little smoothness gives the frosted-glass/metal panels a faint highlight instead
+            // of the completely matte, "dead" look flat Smoothness=0 produces under direct light.
+            if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.25f);
+            if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", 0.25f);
+            if (tex != null)
+            {
+                mat.mainTexture = tex;
+                mat.mainTextureScale = tiling ?? Vector2.one;
+            }
+            // Imported Kenney models aren't guaranteed to have outward-facing normals the way
+            // our own primitives do (e.g. the floor model's visible face pointed down, which
+            // backface culling silently turned invisible from a normal standing viewpoint).
+            // Rendering both sides is harmless for flat/solid whitebox shapes and removes that
+            // whole class of "imported mesh renders as a black hole" surprise.
+            if (mat.HasProperty("_Cull")) mat.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
             EditorUtility.SetDirty(mat);
             return mat;
         }
@@ -176,6 +200,90 @@ namespace WhiteBoxKit
             return go;
         }
 
+        // ---------- Imported model part helper ----------
+        // Kenney's CC0 model packs (Assets/KenneyAssets/Models/) are not authored at the
+        // project's 1-unit-=-1m convention, and some of them keep an absolute offset from a
+        // shared master scene baked into the mesh instead of being centered at their own
+        // origin. This measures each model's actual bounds at import time (rather than relying
+        // on hand-measured constants, which would silently go stale if a file changes) and
+        // re-pivots/re-scales it to drop into the same "pass a center position" calling
+        // convention as AddBoxPart, so callers don't need to care that it's a real mesh
+        // underneath. Original materials/textures are discarded in favor of the project's own
+        // flat-color material set, both to keep the look consistent and to avoid importing
+        // texture assets at all.
+        public static GameObject AddModelPart(GameObject root, string partName, string fbxAssetPath,
+            Vector3 targetSize, Vector3 localCenter, Material mat, bool uniformScale = true)
+        {
+            GameObject fbx = AssetDatabase.LoadAssetAtPath<GameObject>(fbxAssetPath);
+            if (fbx == null)
+            {
+                Debug.LogError("[WhiteBox] Model not found, falling back to a box: " + fbxAssetPath);
+                return AddBoxPart(root, partName, targetSize, localCenter, mat);
+            }
+
+            GameObject inst = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+            inst.name = partName;
+            // Some Kenney FBX exports keep each piece's original position from the combined
+            // kit layout scene (e.g. floorFull.fbx spawns at ~(-66, 0, 16), not the origin).
+            // Zero the root transform first so nativeBounds is measured pivot-relative, which
+            // is what the re-pivot math below assumes.
+            inst.transform.position = Vector3.zero;
+            Bounds nativeBounds = ComputeRendererBounds(inst);
+
+            Vector3 scale;
+            if (uniformScale)
+            {
+                float sx = targetSize.x / Mathf.Max(nativeBounds.size.x, 0.0001f);
+                float sy = targetSize.y / Mathf.Max(nativeBounds.size.y, 0.0001f);
+                float sz = targetSize.z / Mathf.Max(nativeBounds.size.z, 0.0001f);
+                float s = (sx + sy + sz) / 3f;
+                scale = new Vector3(s, s, s);
+            }
+            else
+            {
+                scale = new Vector3(
+                    targetSize.x / Mathf.Max(nativeBounds.size.x, 0.0001f),
+                    targetSize.y / Mathf.Max(nativeBounds.size.y, 0.0001f),
+                    targetSize.z / Mathf.Max(nativeBounds.size.z, 0.0001f));
+            }
+
+            inst.transform.SetParent(root.transform, false);
+            inst.transform.localScale = scale;
+            // Re-pivot so the model's (scaled) bounds center lands exactly at localCenter,
+            // regardless of whatever offset the mesh carried in its own coordinate space.
+            inst.transform.localPosition = localCenter - Vector3.Scale(nativeBounds.center, scale);
+
+            // Some of these models have multiple material slots per renderer (e.g. a separate
+            // slot for a screen/panel accent); overwriting only .sharedMaterial leaves the
+            // others on their original (now textureless) material, which shows up as a stray
+            // gray/placeholder patch. Fill every slot with the same material instead.
+            foreach (Renderer r in inst.GetComponentsInChildren<Renderer>())
+            {
+                Material[] mats = new Material[r.sharedMaterials.Length];
+                for (int i = 0; i < mats.Length; i++) mats[i] = mat;
+                r.sharedMaterials = mats;
+            }
+
+            BoxCollider col = inst.AddComponent<BoxCollider>();
+            col.center = nativeBounds.center;
+            col.size = nativeBounds.size;
+
+            return inst;
+        }
+
+        public static string KenneyModel(string name) => "Assets/KenneyAssets/Models/" + name + ".fbx";
+
+        static Bounds ComputeRendererBounds(GameObject go)
+        {
+            Bounds? b = null;
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>())
+            {
+                if (b == null) b = r.bounds;
+                else { Bounds bb = b.Value; bb.Encapsulate(r.bounds); b = bb; }
+            }
+            return b ?? new Bounds(Vector3.zero, Vector3.zero);
+        }
+
         static GameObject SaveAsPrefab(GameObject root)
         {
             string path = PrefabFolder + "/" + root.name + ".prefab";
@@ -197,7 +305,7 @@ namespace WhiteBoxKit
             // Floor_2x2 : root pivot = top of floor surface (y=0)
             {
                 var root = NewRoot("Floor_2x2");
-                AddBoxPart(root, "Mesh", new Vector3(2f, 0.1f, 2f), new Vector3(0, -0.05f, 0), MatFloor);
+                AddModelPart(root, "Mesh", KenneyModel("floorFull"), new Vector3(2f, 0.1f, 2f), new Vector3(0, -0.05f, 0), MatFloor);
                 prefabs["Floor_2x2"] = SaveAsPrefab(root);
             }
 
@@ -236,30 +344,36 @@ namespace WhiteBoxKit
                 Light lt = lightGO.AddComponent<Light>();
                 lt.type = LightType.Point;
                 lt.range = 4.5f;
-                lt.intensity = 1.4f;
-                lt.color = new Color(1f, 0.93f, 0.78f); // warm sickly fluorescent tint
+                lt.intensity = 0.9f;
+                lt.color = new Color(0.95f, 0.97f, 1f); // cool clinical-white light
                 lt.shadows = LightShadows.None;
                 prefabs["Ceiling_Light_2x2"] = SaveAsPrefab(root);
             }
 
-            // Pillar : root pivot = bottom-center
+            // Pillar : root pivot = bottom-center. Space Kit's structural piece isn't
+            // slender like a column, so it's scaled non-uniformly to fit the footprint instead
+            // of using CreateModelPart's default uniform scale.
             {
                 var root = NewRoot("Pillar");
-                AddBoxPart(root, "Mesh", new Vector3(0.5f, WallHeight, 0.5f), new Vector3(0, WallHeight / 2f, 0), MatWall);
+                AddModelPart(root, "Mesh", KenneyModel("metalStructure"),
+                    new Vector3(0.5f, WallHeight, 0.5f), new Vector3(0, WallHeight / 2f, 0), MatWall, uniformScale: false);
                 prefabs["Pillar"] = SaveAsPrefab(root);
             }
 
             // Desk : root pivot = bottom-center
             {
                 var root = NewRoot("Desk");
-                AddBoxPart(root, "Mesh", new Vector3(1.4f, 0.75f, 0.7f), new Vector3(0, 0.375f, 0), MatStructure);
+                AddModelPart(root, "Mesh", KenneyModel("desk"), new Vector3(1.4f, 0.75f, 0.7f), new Vector3(0, 0.375f, 0), MatStructure);
                 prefabs["Desk"] = SaveAsPrefab(root);
             }
 
-            // Counter_Drawer : root pivot = bottom-center. Drawer front highlighted orange (interactable).
+            // Counter_Drawer : root pivot = bottom-center. Mesh_DrawerFront stays a plain
+            // orange box (not part of the model) because MovableCabinetClue/DrawerClue and
+            // every room that uses this prefab find it by that exact name to drive the slide
+            // animation — it's the interactive handle, layered in front of the real model body.
             {
                 var root = NewRoot("Counter_Drawer");
-                AddBoxPart(root, "Mesh_Body", new Vector3(1.2f, 0.9f, 0.6f), new Vector3(0, 0.45f, 0), MatStructure);
+                AddModelPart(root, "Mesh_Body", KenneyModel("sideTableDrawers"), new Vector3(1.2f, 0.9f, 0.6f), new Vector3(0, 0.45f, 0), MatStructure);
                 AddBoxPart(root, "Mesh_DrawerFront", new Vector3(0.4f, 0.15f, 0.05f), new Vector3(0, 0.5f, 0.325f), MatInteractive);
                 prefabs["Counter_Drawer"] = SaveAsPrefab(root);
             }
@@ -267,9 +381,7 @@ namespace WhiteBoxKit
             // Chair : root pivot = bottom-center (leg base on floor)
             {
                 var root = NewRoot("Chair");
-                AddBoxPart(root, "Mesh_Leg", new Vector3(0.08f, 0.42f, 0.08f), new Vector3(0, 0.21f, 0), MatStructure);
-                AddBoxPart(root, "Mesh_Seat", new Vector3(0.45f, 0.05f, 0.45f), new Vector3(0, 0.445f, 0), MatStructure);
-                AddBoxPart(root, "Mesh_Back", new Vector3(0.45f, 0.5f, 0.05f), new Vector3(0, 0.72f, -0.2f), MatStructure);
+                AddModelPart(root, "Mesh", KenneyModel("chairDesk"), new Vector3(0.45f, 0.9f, 0.5f), new Vector3(0, 0.45f, 0), MatStructure);
                 prefabs["Chair"] = SaveAsPrefab(root);
             }
 

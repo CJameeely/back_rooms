@@ -4,28 +4,39 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// Room 1's fail condition. Runs a silent countdown: lights flicker with increasing frequency
-/// in the last `flickerWindow` seconds, then shut off one by one over the last `shutoffWindow`
-/// seconds, then a full blackout holds for 2s before the player loses. No countdown number is
-/// ever shown — the lights themselves are the clock.
-public class LightsOutTimer : MonoBehaviour
+/// Per-room silent countdown, generalized from the original Room-1-only LightsOutTimer so it can
+/// be dropped onto any of the four challenge rooms. Only affects this room's own ceiling lights:
+/// lights flicker with increasing frequency in the last `flickerWindow` seconds, then shut off one
+/// by one over the last `shutoffWindow` seconds, then a full blackout holds for `blackoutHold`
+/// before the player loses. No countdown number is ever shown — the lights themselves are the
+/// clock. Does NOT start on its own; call BeginCountdown() once the player actually enters the
+/// room (a RoomEntryTrigger normally does this).
+public class RoomTimer : MonoBehaviour
 {
+    [Tooltip("1-4. Used for GameState.Fail() so the End screen can report which room ran out of time.")]
+    public int roomNumber;
+
     public bool timerEnabled = true;
     public float totalDuration = 180f;
     public float flickerWindow = 60f;  // starts flickering when this many seconds remain
     public float shutoffWindow = 20f;  // starts sequential shutoff when this many seconds remain
     public float blackoutHold = 2f;
+    [Tooltip("How long a Penalty() dims the room's lights as feedback.")]
+    public float penaltyFlashDuration = 0.3f;
 
-    [Tooltip("Every ceiling light in Room 1, auto-populated by the generator.")]
+    [Tooltip("Every ceiling light in this room, auto-populated by the generator.")]
     public Light[] roomLights = System.Array.Empty<Light>();
     [Tooltip("Same order as roomLights: each light's emissive ceiling panel.")]
     public Renderer[] roomPanels = System.Array.Empty<Renderer>();
 
-    [Tooltip("The specific light the Bar clue's switch controls, so it can be force-revealed if the timer kills it first.")]
+    [Tooltip("Room 1 only: the specific light the Bar clue's switch controls, so it can be force-revealed if the timer kills it first.")]
     public Light linkedLight;
     public LightSwitchClue linkedSwitchClue;
 
     public bool HasExpired => timerEnabled && _elapsed >= totalDuration;
+    public bool IsRunning => _started && !_blackoutStarted;
+
+    bool _started;
     float _elapsed;
     bool _flickerStarted, _shutoffStarted, _blackoutStarted;
     readonly HashSet<Light> _off = new HashSet<Light>();
@@ -33,12 +44,10 @@ public class LightsOutTimer : MonoBehaviour
     Dictionary<Light, Material> _panelInstances;
     Dictionary<Light, Color> _panelBaseEmission;
 
-    void Start()
+    public void BeginCountdown()
     {
-        GameResult.StartTime = Time.time;
-        GameResult.Won = false;
-        GameResult.ElapsedSeconds = 0f;
-        if (!timerEnabled) { enabled = false; return; }
+        if (_started || !timerEnabled) return;
+        _started = true;
 
         _shutoffOrder = roomLights.OrderBy(_ => Random.value).ToList();
         _panelInstances = new Dictionary<Light, Material>();
@@ -52,9 +61,33 @@ public class LightsOutTimer : MonoBehaviour
         }
     }
 
+    /// Docks `seconds` off the remaining time (used for wrong-guess penalties) and gives a brief
+    /// visual flash so the player feels it even though no number is ever shown.
+    public void Penalty(float seconds)
+    {
+        if (!_started || _blackoutStarted) return;
+        _elapsed += seconds;
+        StartCoroutine(PenaltyFlash());
+    }
+
+    IEnumerator PenaltyFlash()
+    {
+        foreach (var kv in _panelInstances)
+        {
+            if (_off.Contains(kv.Key)) continue;
+            kv.Value.SetColor("_EmissionColor", _panelBaseEmission[kv.Key] * 0.15f);
+        }
+        yield return new WaitForSeconds(penaltyFlashDuration);
+        foreach (var kv in _panelInstances)
+        {
+            if (_off.Contains(kv.Key)) continue;
+            kv.Value.SetColor("_EmissionColor", _panelBaseEmission[kv.Key]);
+        }
+    }
+
     void Update()
     {
-        if (!timerEnabled || _blackoutStarted) return;
+        if (!_started || !timerEnabled || _blackoutStarted) return;
 
         _elapsed += Time.deltaTime;
         float remaining = totalDuration - _elapsed;
@@ -135,8 +168,7 @@ public class LightsOutTimer : MonoBehaviour
 
         yield return new WaitForSeconds(blackoutHold);
 
-        GameResult.Won = false;
-        GameResult.ElapsedSeconds = Time.time - GameResult.StartTime;
+        GameState.Fail(roomNumber);
         SceneManager.LoadScene("End");
     }
 }

@@ -4,7 +4,7 @@ using TMPro;
 
 /// Clue 4 (Bar): the switch. E toggles the nearest ceiling light; the clue text next to it
 /// fades between near-invisible (light on) and fully visible (light off) over ~0.5s. If
-/// LightsOutTimer later kills this same light on its own, ForceReveal() locks the text visible
+/// RoomTimer later kills this same light on its own, ForceReveal() locks the text visible
 /// regardless of switch state, per spec.
 public class LightSwitchClue : MonoBehaviour, IInteractable, IClueSource
 {
@@ -20,6 +20,7 @@ public class LightSwitchClue : MonoBehaviour, IInteractable, IClueSource
 
     public string InteractionPrompt => _forceRevealed ? null : (_lightOn ? "Turn off light" : "Turn on light");
     public bool CanInteract => !_forceRevealed;
+    public string BlockedReason => null;
 
     bool _lightOn = true;
     bool _forceRevealed;
@@ -49,7 +50,7 @@ public class LightSwitchClue : MonoBehaviour, IInteractable, IClueSource
         StartCoroutine(Fade());
     }
 
-    /// Called by LightsOutTimer when its countdown extinguishes this exact light.
+    /// Called by RoomTimer when its countdown extinguishes this exact light.
     public void ForceReveal()
     {
         _forceRevealed = true;

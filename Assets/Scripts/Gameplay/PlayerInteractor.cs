@@ -26,12 +26,24 @@ public class PlayerInteractor : MonoBehaviour
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         bool hitSomething = Physics.Raycast(ray, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Collide);
 
+        bool carryingStool = StoolCarrier.Instance != null && StoolCarrier.Instance.IsCarrying;
         _current = hitSomething ? hit.collider.GetComponentInParent<IInteractable>() : null;
 
         if (promptText != null)
         {
-            bool showPrompt = _current != null && _current.CanInteract && !string.IsNullOrEmpty(_current.InteractionPrompt);
-            promptText.text = showPrompt ? $"E   {_current.InteractionPrompt}" : "";
+            // Carrying the stool overrides whatever's under the crosshair: E always tries to
+            // place it, and being near a doorway while carrying always warns about it, regardless
+            // of what the player happens to be looking at.
+            if (carryingStool && StoolCarrier.Instance.NearBlockedDoor)
+                promptText.text = "Put the stool down first";
+            else if (carryingStool)
+                promptText.text = "E   Place stool";
+            else if (_current != null && _current.CanInteract && !string.IsNullOrEmpty(_current.InteractionPrompt))
+                promptText.text = $"E   {_current.InteractionPrompt}";
+            else if (_current != null && !_current.CanInteract && !string.IsNullOrEmpty(_current.BlockedReason))
+                promptText.text = _current.BlockedReason;
+            else
+                promptText.text = "";
         }
 
         if (hitSomething)
@@ -41,10 +53,16 @@ public class PlayerInteractor : MonoBehaviour
                 ClueTracker.Instance.MarkSeen(clue.Symbol, clue.Digit);
         }
 
-        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame &&
-            _current != null && _current.CanInteract)
+        if (Keyboard.current != null)
         {
-            _current.Interact(gameObject);
+            if (Keyboard.current.eKey.wasPressedThisFrame)
+            {
+                if (carryingStool) StoolCarrier.Instance.TryPlace();
+                else if (_current != null && _current.CanInteract) _current.Interact(gameObject);
+            }
+
+            if (Keyboard.current.tabKey.wasPressedThisFrame && ObjectiveToast.Instance != null)
+                ObjectiveToast.Instance.ReplayCurrent();
         }
     }
 }

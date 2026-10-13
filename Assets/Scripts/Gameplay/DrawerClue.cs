@@ -14,6 +14,7 @@ public class DrawerClue : MonoBehaviour, IInteractable
 
     public string InteractionPrompt => _opened ? null : "Open drawer";
     public bool CanInteract => !_opened;
+    public string BlockedReason => null;
 
     void Awake() => _mover = GetComponent<SlideMover>();
 

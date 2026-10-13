@@ -30,22 +30,22 @@ namespace WhiteBoxKit
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             Canvas canvas = UIBuilder.CreateScreenCanvas("TitleCanvas");
-            UIBuilder.AddPanel(canvas.transform, "Background", new Color(0.05f, 0.05f, 0.05f, 1f));
+            UIBuilder.AddPanel(canvas.transform, "Background", new Color(0.90f, 0.92f, 0.95f, 1f));
 
             UIBuilder.AddText(canvas.transform, "GameTitle", "THE LAST LIGHT", 64, TextAlignmentOptions.Center,
-                Color.white, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 240), new Vector2(900, 100));
+                new Color(0.15f, 0.17f, 0.2f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 240), new Vector2(900, 100));
 
             UIBuilder.AddText(canvas.transform, "Subtitle",
                 "Recover the traces a researcher left behind before the lights go out.", 24,
-                TextAlignmentOptions.Center, new Color(0.8f, 0.8f, 0.8f),
+                TextAlignmentOptions.Center, new Color(0.35f, 0.38f, 0.42f),
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 160), new Vector2(900, 60));
 
             UIBuilder.AddText(canvas.transform, "Credits", "Created by CJ Evan", 20, TextAlignmentOptions.Center,
-                new Color(0.5f, 0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 60), new Vector2(900, 40));
+                new Color(0.5f, 0.52f, 0.56f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 60), new Vector2(900, 40));
 
             UIBuilder.AddText(canvas.transform, "Instructions",
                 "Find four symbol clues. Match their digits on the exit keypad.\nWalk through the unlocked door to win. You have 3 minutes.\nFlickering lights warn you that time is running out.\n\nWASD  Move    |    Mouse  Look    |    E  Interact\nKeypad: 0-9 / click    |    Enter  Confirm    |    Esc  Close", 25,
-                TextAlignmentOptions.Center, new Color(0.8f, 0.8f, 0.8f),
+                TextAlignmentOptions.Center, new Color(0.4f, 0.43f, 0.47f),
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(1100, 240));
 
             GameObject managerGO = new GameObject("TitleMenu");
@@ -64,22 +64,29 @@ namespace WhiteBoxKit
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             Canvas canvas = UIBuilder.CreateScreenCanvas("EndCanvas");
-            UIBuilder.AddPanel(canvas.transform, "Background", new Color(0.05f, 0.05f, 0.05f, 1f));
+            UIBuilder.AddPanel(canvas.transform, "Background", new Color(0.90f, 0.92f, 0.95f, 1f));
 
             TextMeshProUGUI title = UIBuilder.AddText(canvas.transform, "ResultTitle", "", 42, TextAlignmentOptions.Center,
-                Color.white, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 140), new Vector2(1000, 90));
+                new Color(0.15f, 0.17f, 0.2f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 140), new Vector2(1000, 90));
             TextMeshProUGUI sub = UIBuilder.AddText(canvas.transform, "ResultSub", "", 28, TextAlignmentOptions.Center,
-                new Color(0.8f, 0.8f, 0.8f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 70), new Vector2(900, 60));
+                new Color(0.35f, 0.38f, 0.42f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 70), new Vector2(900, 60));
 
             GameObject managerGO = new GameObject("EndMenu");
             EndMenu menu = managerGO.AddComponent<EndMenu>();
             menu.titleText = title;
             menu.subText = sub;
 
-            var (_, replayButton, _) = UIBuilder.AddButton(canvas.transform, "ReplayButton", "Replay",
+            var (retryGO, retryButton, _) = UIBuilder.AddButton(canvas.transform, "RetryRoomButton", "Retry Room",
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-120, -60), new Vector2(200, 60),
-                new Color(1f, 0.45f, 0f), Color.white, 26f);
-            UIBuilder.BindClick(replayButton, menu, nameof(EndMenu.OnReplayPressed));
+                new Color(1f, 0.45f, 0f), Color.white, 24f);
+            UIBuilder.BindClick(retryButton, menu, nameof(EndMenu.OnRetryRoomPressed));
+            menu.retryButton = retryGO;
+
+            var (playAgainGO, playAgainButton, _) = UIBuilder.AddButton(canvas.transform, "PlayAgainButton", "Play Again",
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-120, -60), new Vector2(200, 60),
+                new Color(1f, 0.45f, 0f), Color.white, 24f);
+            UIBuilder.BindClick(playAgainButton, menu, nameof(EndMenu.OnPlayAgainPressed));
+            menu.playAgainButton = playAgainGO;
 
             var (_, titleButton, _) = UIBuilder.AddButton(canvas.transform, "TitleButton", "Title",
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(120, -60), new Vector2(200, 60),

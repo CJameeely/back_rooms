@@ -1,10 +1,15 @@
 using UnityEngine;
 
-/// The world-space keypad panel. E opens the input UI (KeypadUI is a scene-wide singleton).
+/// The world-space keypad panel. E opens its input UI. `ui` is assigned at build time to the
+/// specific KeypadUI panel this keypad owns — each door gets its own KeypadUI instance now (Room
+/// 1 and Room 2 both have one), so this no longer reaches for a global singleton.
 public class KeypadController : MonoBehaviour, IInteractable
 {
-    public string InteractionPrompt => KeypadUI.Instance != null && KeypadUI.Instance.Solved ? null : "Use keypad";
-    public bool CanInteract => KeypadUI.Instance != null && !KeypadUI.Instance.Solved;
+    public KeypadUI ui;
 
-    public void Interact(GameObject interactor) => KeypadUI.Instance.Open();
+    public string InteractionPrompt => ui != null && ui.Solved ? null : "Use keypad";
+    public bool CanInteract => ui != null && !ui.Solved;
+    public string BlockedReason => null;
+
+    public void Interact(GameObject interactor) => ui.Open();
 }

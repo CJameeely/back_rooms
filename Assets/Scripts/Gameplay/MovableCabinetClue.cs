@@ -15,6 +15,7 @@ public class MovableCabinetClue : MonoBehaviour, IInteractable
 
     public string InteractionPrompt => _moved ? null : "Move cabinet";
     public bool CanInteract => !_moved;
+    public string BlockedReason => null;
 
     void Awake() => _mover = GetComponent<SlideMover>();
 

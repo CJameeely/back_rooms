@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using TMPro;
 using static WhiteBoxKit.WhiteBoxModules;
 
@@ -53,19 +54,31 @@ namespace WhiteBoxKit
 
             Canvas canvas = UIBuilder.CreateScreenCanvas("GameplayCanvas");
             BuildCrosshairAndPrompt(canvas.transform, player);
+            BuildInventoryUI(canvas.transform);
+            BuildObjectiveToastUI(canvas.transform);
 
             GameObject managers = new GameObject("GameplayManagers");
             CodeManager codeManager = managers.AddComponent<CodeManager>();
             ClueTracker clueTracker = BuildClueTrackerUI(canvas.transform);
+            clueTracker.room1Code = codeManager;
 
             BuildCabinetClue(content, roomCenter);
             BuildDrawerAndPaperClue(content, prefabs, roomCenter, canvas.transform);
             BuildPillarClue(content, roomCenter);
             LightSwitchClue switchClue = BuildLightSwitchClue(content, prefabs, ceiling, roomCenter);
 
-            BuildDoorKeypadAndWin(walls, content, prefabs, canvas.transform, roomCenter);
+            RoomTimer timer = BuildRoomTimer(managers.transform, ceiling, switchClue);
 
-            BuildLightsOutTimer(managers.transform, ceiling, switchClue);
+            BuildDoorKeypadAndWin(walls, content, prefabs, canvas.transform, roomCenter, codeManager, clueTracker, timer);
+
+            // The player spawns already inside Room 1 (there's no doorway to walk through at
+            // game start), so "first entry" happens immediately rather than via a
+            // RoomEntryTrigger. ImmediateRoomEntry fires this at runtime Start(), not here at
+            // scene-generation time — GameState/coroutines only mean anything once Play begins.
+            ImmediateRoomEntry entry = managers.AddComponent<ImmediateRoomEntry>();
+            entry.roomNumber = 1;
+            entry.timer = timer;
+            entry.objectiveText = "Four marks, four numbers. The door reads them in its own order.";
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -94,7 +107,7 @@ namespace WhiteBoxKit
             if (capsule != null) Object.DestroyImmediate(capsule.gameObject);
 
             foreach (string n in new[] { "Gameplay_Cabinet", "Gameplay_Drawer", "Gameplay_Switch",
-                "Gameplay_Keypad", "Gameplay_Door", "Gameplay_WinTrigger", "Gameplay_PillarClue",
+                "Gameplay_Keypad", "Gameplay_Door", "Gameplay_RoomExit", "Gameplay_PillarClue",
                 "Gameplay_CabinetReveal" })
             {
                 Transform t = content.Find(n);
@@ -117,6 +130,11 @@ namespace WhiteBoxKit
             cc.height = 1.8f;
             cc.center = new Vector3(0, 0.9f, 0);
             cc.radius = 0.35f;
+            // Room 2 needs the player to walk straight up onto a 0.45m stool without jumping.
+            // Nothing in Room 1 is a ledge in that 0-0.5m range (the desk top is 0.75m, well
+            // above this), so raising it from the CharacterController default doesn't let the
+            // player step up onto anything that shouldn't be climbable there.
+            cc.stepOffset = 0.5f;
 
             GameObject camGO = new GameObject("Camera", typeof(Camera), typeof(AudioListener));
             camGO.transform.SetParent(player.transform, false);
@@ -152,6 +170,47 @@ namespace WhiteBoxKit
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -50), new Vector2(600, 50));
 
             player.GetComponent<PlayerInteractor>().promptText = prompt;
+        }
+
+        // ---------------- HUD: inventory row + objective toast ----------------
+        // Built for every room from Stage 1 onward even though Room 1 itself has nothing that
+        // uses them yet (no pickups, only one objective line) — Rooms 2-4 need both.
+
+        static void BuildInventoryUI(Transform canvasT)
+        {
+            RectTransform row = UIBuilder.AddRect(canvasT, "InventoryRow");
+            row.anchorMin = row.anchorMax = new Vector2(0.5f, 0f);
+            row.pivot = new Vector2(0.5f, 0f);
+            row.anchoredPosition = new Vector2(0, 30);
+            row.sizeDelta = new Vector2(4 * 70, 60);
+
+            Inventory inventory = row.gameObject.AddComponent<Inventory>();
+            inventory.slotIcons = new Image[Inventory.MaxSlots];
+            for (int i = 0; i < Inventory.MaxSlots; i++)
+            {
+                RectTransform slot = UIBuilder.AddRect(row, $"Slot_{i}");
+                slot.anchorMin = slot.anchorMax = new Vector2(0f, 0.5f);
+                slot.sizeDelta = new Vector2(56, 56);
+                slot.anchoredPosition = new Vector2(i * 70 + 28, 0);
+                Image img = slot.gameObject.AddComponent<Image>();
+                img.color = Color.white;
+                slot.gameObject.SetActive(false); // empty by default; Inventory.RefreshUI() reveals filled slots
+                inventory.slotIcons[i] = img;
+            }
+
+            inventory.pickupToastText = UIBuilder.AddText(canvasT, "PickupToast", "", 24,
+                TextAlignmentOptions.Center, Color.white,
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 100), new Vector2(500, 40));
+        }
+
+        static ObjectiveToast BuildObjectiveToastUI(Transform canvasT)
+        {
+            TextMeshProUGUI label = UIBuilder.AddText(canvasT, "ObjectiveToast", "", 28,
+                TextAlignmentOptions.Center, new Color(0.95f, 0.95f, 0.95f),
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -60), new Vector2(900, 50));
+            ObjectiveToast toast = label.gameObject.AddComponent<ObjectiveToast>();
+            toast.label = label;
+            return toast;
         }
 
         static ClueTracker BuildClueTrackerUI(Transform canvasT)
@@ -214,10 +273,23 @@ namespace WhiteBoxKit
             DrawerClue drawer = front.gameObject.AddComponent<DrawerClue>();
             drawer.openLocalPosition = front.localPosition + new Vector3(0, 0, 0.3f);
 
-            GameObject paper = (GameObject)PrefabUtility.InstantiatePrefab(prefabs["Paper"], front);
+            // Mesh_DrawerFront has a non-uniform scale (0.4, 0.15, 0.05). Scale compounds
+            // multiplicatively down the WHOLE transform chain, so a child of a child of a
+            // non-uniformly-scaled object still inherits the squash no matter what local scale
+            // sits in between (an unscaled "anchor" in the middle does NOT cancel an ancestor's
+            // scale — that was the mistake in the previous attempt at this fix). The paper
+            // previously rendered at ~1.5mm thick as a result — invisible in practice.
+            // Fix: don't parent it under `front` (or anything under it) at all. Parent it
+            // directly under `counter`, whose root has no scale, at the position it would end
+            // up once the drawer is open; it just appears there rather than riding along with
+            // the slide animation, which is visually fine and avoids the whole scale chain.
+            GameObject paper = (GameObject)PrefabUtility.InstantiatePrefab(prefabs["Paper"], counter.transform);
             paper.name = "Paper";
-            paper.transform.localPosition = new Vector3(0, 0.05f, 0.05f);
-            paper.transform.localRotation = Quaternion.Euler(0, 10f, 0);
+            paper.transform.localPosition = front.localPosition + new Vector3(0f, 0.12f, 0.4f);
+            // Tilted up rather than lying flat, so it reads from a standing player's eye-level
+            // instead of being seen edge-on; scaled up a bit since it's a small object to aim at.
+            paper.transform.localRotation = Quaternion.Euler(65f, 10f, 0f);
+            paper.transform.localScale = new Vector3(1.4f, 1f, 1.4f);
             paper.SetActive(false);
             PaperCloseupClue paperClue = paper.AddComponent<PaperCloseupClue>();
             paperClue.symbol = ClueSymbol.Triangle;
@@ -335,7 +407,8 @@ namespace WhiteBoxKit
 
         // ---------------- Door + keypad + win ----------------
 
-        static void BuildDoorKeypadAndWin(Transform walls, Transform content, Dictionary<string, GameObject> prefabs, Transform canvasT, Vector3 roomCenter)
+        static void BuildDoorKeypadAndWin(Transform walls, Transform content, Dictionary<string, GameObject> prefabs, Transform canvasT, Vector3 roomCenter,
+            CodeManager codeManager, ClueTracker clueTracker, RoomTimer timer)
         {
             Transform doorFrame = walls.Find("Wall_East_Center");
             if (doorFrame == null) { Debug.LogWarning("[WhiteBox] East door not found; skipping door/keypad/win setup."); return; }
@@ -378,13 +451,9 @@ namespace WhiteBoxKit
             keypadRoot.transform.SetParent(content, false);
             keypadRoot.transform.position = keypadPos - outward * 0.06f + Vector3.up * 1.25f;
             keypadRoot.transform.rotation = doorRot * Quaternion.Euler(0, 180, 0);
-            keypadRoot.AddComponent<KeypadController>();
+            KeypadController keypadController = keypadRoot.AddComponent<KeypadController>();
 
-            GameObject backing = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            backing.name = "Backing";
-            backing.transform.SetParent(keypadRoot.transform, false);
-            backing.transform.localScale = new Vector3(0.55f, 0.45f, 0.03f);
-            backing.GetComponent<Renderer>().sharedMaterial = MatStructure;
+            AddModelPart(keypadRoot, "Backing", KenneyModel("console"), new Vector3(0.55f, 0.45f, 0.12f), Vector3.zero, MatStructure);
 
             for (int row = 0; row < 3; row++)
             {
@@ -399,20 +468,33 @@ namespace WhiteBoxKit
                 }
             }
 
-            // Win trigger just past the (now open) doorway, into the existing corridor to Room 2.
-            GameObject win = new GameObject("Gameplay_WinTrigger", typeof(BoxCollider));
-            win.transform.SetParent(content, false);
-            win.transform.position = doorPos + outward * 1.2f + Vector3.up * (DoorGapHeight / 2f);
-            win.transform.rotation = doorRot;
-            BoxCollider col = win.GetComponent<BoxCollider>();
+            // Room-exit trigger just past the (now open) doorway, into the existing corridor to
+            // Room 2. Marks Room 1 solved; does NOT end the game (that only happens at the very
+            // end of the exit corridor after Room 4).
+            GameObject exit = new GameObject("Gameplay_RoomExit", typeof(BoxCollider));
+            exit.transform.SetParent(content, false);
+            exit.transform.position = doorPos + outward * 1.2f + Vector3.up * (DoorGapHeight / 2f);
+            exit.transform.rotation = doorRot;
+            BoxCollider col = exit.GetComponent<BoxCollider>();
             col.isTrigger = true;
             col.size = new Vector3(1.2f, DoorGapHeight, 1.6f);
-            win.AddComponent<WinTrigger>();
+            RoomExitTrigger exitTrigger = exit.AddComponent<RoomExitTrigger>();
+            exitTrigger.roomNumber = 1;
+            exitTrigger.isFinalExit = false;
 
-            BuildKeypadUI(canvasT, doorMover, seal.transform.localPosition + Vector3.up * 2.2f);
+            KeypadUI ui = BuildKeypadUI(canvasT, doorMover, seal.transform.localPosition + Vector3.up * 2.2f);
+            ui.showSymbols = true;
+            ui.roomNumberForFastForward = 1;
+            ui.validatorBehaviour = codeManager;
+            ui.clueTrackerToFill = clueTracker;
+            // Spec 1.5: a wrong Room 1 guess now costs time too (it didn't before).
+            ui.penaltyTimer = timer;
+            ui.wrongGuessPenalty = 10f;
+            keypadController.ui = ui;
         }
 
-        static void BuildKeypadUI(Transform canvasT, SlideMover door, Vector3 doorOpenLocalPos)
+        // Public: reused as-is by Room2GameplayBuilder for Room 2's exit keypad.
+        public static KeypadUI BuildKeypadUI(Transform canvasT, SlideMover door, Vector3 doorOpenLocalPos)
         {
             RectTransform panel = UIBuilder.AddRect(canvasT, "KeypadUI");
             panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
@@ -449,6 +531,7 @@ namespace WhiteBoxKit
                     new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(bx, by), new Vector2(90, 55),
                     new Color(1f, 0.45f, 0f), Color.white);
                 KeypadDigitButton digitButton = go.AddComponent<KeypadDigitButton>();
+                digitButton.owner = ui;
                 digitButton.digit = d;
                 UIBuilder.BindClick(button, digitButton, nameof(KeypadDigitButton.Press));
             }
@@ -469,11 +552,12 @@ namespace WhiteBoxKit
             // Left active here deliberately: KeypadUI.Awake() needs to run at scene load (to set
             // Instance) before it disables its own panel, matching PaperCloseupUI's pattern. If
             // this object were saved inactive, Awake would never fire and Instance would stay null.
+            return ui;
         }
 
         // ---------------- Lights-out fail timer ----------------
 
-        static void BuildLightsOutTimer(Transform managers, Transform ceiling, LightSwitchClue switchClue)
+        static RoomTimer BuildRoomTimer(Transform managers, Transform ceiling, LightSwitchClue switchClue)
         {
             List<Light> lights = new List<Light>();
             List<Renderer> panels = new List<Renderer>();
@@ -485,11 +569,13 @@ namespace WhiteBoxKit
                 panels.Add(tile.Find("Mesh_Panel")?.GetComponent<Renderer>());
             }
 
-            LightsOutTimer timer = managers.gameObject.AddComponent<LightsOutTimer>();
+            RoomTimer timer = managers.gameObject.AddComponent<RoomTimer>();
+            timer.roomNumber = 1;
             timer.roomLights = lights.ToArray();
             timer.roomPanels = panels.ToArray();
             timer.linkedLight = switchClue != null ? switchClue.targetLight : null;
             timer.linkedSwitchClue = switchClue;
+            return timer;
         }
     }
 }
