@@ -82,3 +82,6 @@ crashlytics-build.properties
 # Temporary Unity Test Runner scenes
 /Assets/InitTestScene*.unity
 /Assets/InitTestScene*.unity.meta
+
+# Unity native crash diagnostics
+/mono_crash.*

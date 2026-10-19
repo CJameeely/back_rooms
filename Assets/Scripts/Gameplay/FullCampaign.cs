@@ -75,6 +75,7 @@ public class FullCampaign : MonoBehaviour
         neutral = Mat(new Color(.46f,.49f,.47f)); metal = Mat(new Color(.18f,.23f,.23f)); paper = Mat(new Color(.72f,.72f,.61f));
         BuildRoomThree(); BuildRoomFour(); BuildExit(); BuildJanitor(); RestoreCheckpoint();
         gameObject.AddComponent<CampaignGuidance>();
+        ScenePropPlacement.Apply(this);
         CurrentFootprints.Clear(); CurrentTouches.Clear();
         foreach (var p in LastFootprints) Box("PreviousFootprint",p + Vector3.up*.012f,new Vector3(.10f,.005f,.23f),metal,false);
         foreach (var p in LastTouches) Box("PreviousTouch",p,new Vector3(.045f,.045f,.015f),paper,false);
@@ -147,9 +148,13 @@ public class FullCampaign : MonoBehaviour
         if(!source)return;
         var child=source.Cast<Transform>().FirstOrDefault(t=>t.name.StartsWith("__Tripo"));if(!child)return;
         var copy=Instantiate(child.gameObject,target);copy.SetActive(true);copy.transform.localPosition=Vector3.zero;
-        // Fit model using renderer world bounds so pickup colliders remain simple and reliable.
-        var bounds=new Bounds(target.position,Vector3.zero);foreach(var rend in copy.GetComponentsInChildren<Renderer>())bounds.Encapsulate(rend.bounds);
+        // Normalize in world space, then align the mesh with the pickup's physical bounds.
+        var renders=copy.GetComponentsInChildren<Renderer>();
+        var bounds=renders[0].bounds;foreach(var rend in renders)bounds.Encapsulate(rend.bounds);
         float max=Mathf.Max(bounds.size.x,Mathf.Max(bounds.size.y,bounds.size.z));if(max>.001f)copy.transform.localScale*=.32f/max;
+        bounds=renders[0].bounds;foreach(var rend in renders)bounds.Encapsulate(rend.bounds);
+        var physical=new Bounds(target.position,target.lossyScale);
+        copy.transform.position+=new Vector3(physical.center.x-bounds.center.x,physical.min.y-bounds.min.y,physical.center.z-bounds.center.z);
         target.GetComponent<Renderer>().enabled=false;
     }
     void BuildRoomFour()

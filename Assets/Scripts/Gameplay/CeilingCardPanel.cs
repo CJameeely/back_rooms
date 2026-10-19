@@ -32,6 +32,9 @@ public class CeilingCardPanel : MonoBehaviour, IInteractable
     {
         if (_taken) return;
         _taken = true;
+        // The collected card must disappear from the physical lid as well as entering inventory.
+        foreach(Transform child in cover)
+            if(child.name=="Chip" || child.name=="__Tripo_industrial_panel")child.gameObject.SetActive(false);
         StartCoroutine(FlipOpen());
         if (Inventory.Instance != null) Inventory.Instance.TryAdd(cardItem);
         ObjectiveToast.Instance?.Show("Access card collected. Find the red card reader on the sample cabinet and press E.");
