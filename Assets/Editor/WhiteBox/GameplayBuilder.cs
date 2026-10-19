@@ -489,7 +489,7 @@ namespace WhiteBoxKit
             ui.clueTrackerToFill = clueTracker;
             // Spec 1.5: a wrong Room 1 guess now costs time too (it didn't before).
             ui.penaltyTimer = timer;
-            ui.wrongGuessPenalty = 10f;
+            ui.wrongGuessPenalty = 5f;
             keypadController.ui = ui;
         }
 

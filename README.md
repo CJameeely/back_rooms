@@ -1,13 +1,20 @@
-# back_rooms — *The Last Light* White-Box
+# The Last Light — Complete Playable Prototype
 
-第一人称环境解谜游戏《The Last Light》的白盒(white-box)原型。玩家在一个无限重复、灯光均匀过亮的研究室阈限空间(Backrooms 式)里,通过移动光源、读取人类痕迹,重建一位研究者离开前的最后步骤。
+玩家凌晨 3:07 在校园实验室意外穿墙，进入 LEVEL 4.7 THE CLEAN ROOMS。R. Shen 留下的物件、纸条和四段磁带引导玩家发现光照与空间的规则。
 
-整个关卡(房间、家具、贴花、文字标签、乃至房间1的玩法机关)都是**用编辑器脚本程序化生成的**,不是手工在 Scene 里摆出来的——这一点直接决定了你该怎么改东西,见下面「如何修改关卡」。目前状态:
+当前版本（2026-10-19）：
 
-- **9 个白盒房间**(灰模级别,验证尺度/动线/可读性),整体刷了一层 Backrooms 风格的配色。
-- **房间1 是真正可玩的密室**:找 4 条线索拼 4 位密码,输对开门获胜,倒计时灯光熄灭判负。
-- **Title → 关卡 → End** 三场景流程跑通,有胜利/失败两种结局。
-- 其余 8 个房间仍是纯白盒(没有玩法),用来走查空间关系。
+- 四个可玩的挑战：符号密码、凳子与校准卡、检查灯与侧光断路器、镜面顺序与旋钮锁。
+- 九个已有空间串成完整路线，后接出口走廊。普通结局返回循环，真结局回到校园实验室。
+- 每房间独立计时、阅读暂停、错误扣时、隐藏线索加时、重试恢复位置与物品、已解房间保留。
+- 清洁工、字幕磁带、可跳过开场、循环记录与上一轮痕迹已接入。角色和部分环境仍为原型级造型，磁带暂未配音。
+- WASD 移动，鼠标观察，E 互动，F 检查灯，R 旋转校准卡，Tab 重看目标，Esc 关闭界面。
+
+前两间由编辑器生成并保存到场景；`StoryExperience` 与 `FullCampaign` 在关卡加载时安装其余叙事和机关。后半段修改应改对应运行时构建方法。
+
+构建：`WhiteBoxKit.PlaytestBuild.BuildMac`。专用录像构建：`BuildRecording`，启动参数 `--record-playthrough <absolute.mp4>`。录像按真实键鼠输入通关，读取已显示的线索。`--chapter-check` 仅供开发时设置后半段测试状态，带有明显开发标记，不可作为作业通关录像；`--normal-ending` 在完整路线最后选择普通结局。
+
+以下保留基础编辑器生成流程的技术说明；旧的第一间单房间演示不是当前完整游戏的边界。
 
 ## 技术栈
 
@@ -180,3 +187,38 @@ Mac 可用 Shift + Command + 5 选择游戏窗口所在区域录制。建议 128
 ### 本机验证
 
 `Deliverables/playmode-results.xml` 保存本次七项 PlayMode 测试结果（全部通过，涵盖通关、失败、重玩、返回标题、错误密码重试、UI 初始状态、密码键盘可达性和相机巡游）。本机 Unity 6000.6.0f1 的 Burst 原生链接报错，验证时使用 `-burst-disable-compilation` 关闭该编译优化，未屏蔽游戏异常。
+
+
+## Tripo 模型接入（2026-10-18）
+
+18种用户提供的GLB转换为FBX，保留贴图，放在 `Assets/TripoProps/`。文件名可能与实际物件不一致：`metal_cabinet` 是门板，`metal_storage_box` 是灯盖，`space_station_tile` 是校准卡。
+
+使用 `Tools > WhiteBox > Rebuild Level With Tripo Art` 完整重建；单独运行 Step 2 / Step 3 / Step 3b 后，最后运行 `Step 5 - Apply Tripo Art`。新增的 `TripoArtPass.cs` 保留原交互对象与碰撞，只替换视觉子物体。场景重新生成后仍可恢复美术。
+
+`Tools/prepare_tripo.py` 在 Blender 中执行，用于从原GLB生成游戏模型。多数物件约14k三角面；Room 2 的工具箱、托盘、文件夹、凳子和显示器保留原始网格，以避免近景贴图碎裂。原始文件路径见 `Assets/TripoProps/manifest.json`。URP材质使用提取的颜色与法线图，MetalSmooth贴图按glTF金属度/粗糙度通道转换。源GLB没有改写。
+
+本轮完整重建和11项PlayMode测试通过。后续白盒房间的钥匙、灯、镜面和转盘仍是陈设，不代表新增了对应谜题。部分AI网格有近看可见的碎面；实时镜面反射、模型精修和整体光照调整未包含在本轮。
+
+### Room 2 风格预览（2026-10-18）
+
+`Room2StylePass` 为 Room 2 单独使用暖灰墙面、灰绿护墙、磨旧地面和柔和暖光；保留倒计时灯、交互对象及碰撞引用。Step 5 会自动应用，也可运行 `Tools > WhiteBox > Room 2 Style and Preview`。预览输出到项目上一级的 `output/room2_style_20261018/preview.html`。Unity 批处理拍摄先预热渲染，避免首次材质缓冲尚未更新造成的错误贴图。Room 2 通关和 Tripo 资产检查 3 项通过。
+
+### 全关卡风格与通路（2026-10-18）
+
+9 个空间及 8 段走廊已统一应用材质、暖色灯光和低反光设备材质。运行 `Tools > WhiteBox > Style Entire Level and Preview` 可重应用并输出 18 张实际渲染图，位于上一级目录 `output/level_style_20261018/preview.html`。Step 5 及完整重建也会应用全关卡风格。
+
+修复 Room 6 镜子占据入口、Room 7 封闭出口占据西侧入口的问题；最终出口改在北墙。修正桌上道具高度和数字标记被墙面遮挡的问题，隐藏生成器的悬浮文字说明。
+
+12 项 PlayMode 测试通过，包括 Room 1/2 解谜、UI、资产、镜头游览，以及解锁门后按站立胶囊尺寸检查 9 个房间的连接。通路测试验证空间可达，不代表 Room 3–7 的谜题已实现；后续房间与最终出口仍包含待开发内容。
+
+### 氛围 Demo 与声音（2026-10-18）
+
+`output/demo_20261018/The_Last_Light_Atmosphere_Demo.mp4`（仓库上一级）是 66 秒、720p/24fps 的 Unity 引擎场景镜头展示，不是玩家操作或完整通关录像。视频使用同一原创房间环境音；脚步与按钮音已接入游戏，视频镜头没有模拟玩家脚步。
+
+`GameSoundscape` 在进入场景时自动加载环境声、脚步和按钮反馈；所在房间熄灯时环境音减弱。`Tools/make_audio.py` 可重生成三个原创 WAV，无外部音乐授权依赖。13 项 PlayMode 测试通过，包含声音加载、无重复实例及熄灯衰减。Mac 可运行版本同步更新。
+
+### 当前作业 Playthrough（2026-10-18）
+
+最终视频：仓库上一级 `output/playthrough_20261018/The_Last_Light_CJ_Evan_Playthrough.mp4`，161.56 秒，1280×720 / 30 fps，原生游戏音频。标题 → Room 1 四线索与密码 → 实际穿门 → Room 2 搬凳、登高取卡、刷卡、校准、密码 → 实际穿门。末尾明确标注后续谜题仍在开发。
+
+录制专用构建通过 `PlaytestBuild.BuildRecording` 生成，普通构建不启用 `RECORDING_CAPTURE`。录制脚本回放键鼠，依赖真实碰撞、射线、交互和已显示的线索；不传送、不修改密码、不强制胜利。屏幕字幕标明 Automated Input。Unity AudioRenderer 同步记录原生音频，再与帧缓冲视频封装。`verified_capture.mp4.json` 保存完成状态。修复了卡片方向标记字体缺字（改用现有字体支持的三角形）。

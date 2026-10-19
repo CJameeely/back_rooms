@@ -47,6 +47,7 @@ public class Room1GameplaySmokeTest
     [UnityTest]
     public IEnumerator IncorrectCodeCanBeClosedAndRetried()
     {
+        GameState.BeginNewGame();
         yield return SceneManager.LoadSceneAsync("WhiteBox_LastLight");
         yield return null;
         var managers = Find("GameplayManagers");
@@ -62,9 +63,9 @@ public class Room1GameplaySmokeTest
             keypad.PressDigit((CodeManager.Instance.GetDigit((ClueSymbol)i) + 1) % 10);
         keypad.PressConfirm();
         Assert.IsFalse(keypad.Solved);
-        // Spec 1.5: a wrong Room 1 guess now costs 10s, which previously did nothing.
-        Assert.That(ElapsedViaReflection(timer), Is.GreaterThanOrEqualTo(elapsedBefore + 9.9f),
-            "Wrong Room 1 guess should apply a 10s penalty.");
+        // Spec 1.5: a wrong Room 1 guess now costs 5s, which previously did nothing.
+        Assert.That(ElapsedViaReflection(timer), Is.GreaterThanOrEqualTo(elapsedBefore + 4.9f),
+            "Wrong Room 1 guess should apply a 5s penalty.");
 
         keypad.Close(); // Closing during rejection must cancel its coroutine and reset the panel.
         keypad.Open();

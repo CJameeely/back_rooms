@@ -28,9 +28,9 @@ public class RoomEntryTrigger : MonoBehaviour
         if (roomNumber > 0)
             GameState.SetCheckpoint(roomNumber, Inventory.Instance != null ? Inventory.Instance.SnapshotIds() : new System.Collections.Generic.List<string>());
 
-        timer?.BeginCountdown();
+        if (!GameState.IsRoomSolved(roomNumber)) timer?.BeginCountdown();
 
         if (!string.IsNullOrEmpty(objectiveText) && ObjectiveToast.Instance != null)
-            ObjectiveToast.Instance.Show(objectiveText);
+            ObjectiveToast.Instance.Show(NarrativeText.Entry(roomNumber, objectiveText));
     }
 }

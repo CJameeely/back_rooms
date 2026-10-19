@@ -25,6 +25,7 @@ public class PaperCloseupUI : MonoBehaviour
         if (KeypadUI.Instance != null && KeypadUI.Instance.IsOpen) return;
         _openedFrame = Time.frameCount;
         panelRoot.SetActive(true);
+        NarrativeText.Paper(panelRoot);
         symbolDigitText.text = $"{CodeManager.SymbolGlyph(symbol)}   {digit}";
         FirstPersonController.Instance.SetInputEnabled(false);
     }

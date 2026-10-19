@@ -78,3 +78,7 @@ crashlytics-build.properties
 # Screenshots are a regenerated build artifact (Tools > WhiteBox > Capture Screenshots),
 # not source content, so they're kept out of the repo to avoid churn on every rebuild.
 /Screenshots/
+
+# Temporary Unity Test Runner scenes
+/Assets/InitTestScene*.unity
+/Assets/InitTestScene*.unity.meta

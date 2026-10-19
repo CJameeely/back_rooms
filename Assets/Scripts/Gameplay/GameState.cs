@@ -37,6 +37,8 @@ public static class GameState
     public static void BeginNewGame()
     {
         Started = true;
+        FullCampaign.ResetRun();
+        StoryExperience.IntroPending = false;
         Won = false;
         FailedRoomNumber = 0;
         SolvedRooms.Clear();
@@ -76,6 +78,7 @@ public static class GameState
 
     public static void SetCheckpoint(int roomNumber, List<string> inventorySnapshot)
     {
+        if (roomNumber < CheckpointRoom) return;
         CheckpointRoom = roomNumber;
         CheckpointInventory = new List<string>(inventorySnapshot);
     }
@@ -89,6 +92,7 @@ public static class GameState
     {
         Won = false;
         FailedRoomNumber = roomNumber;
+        FullCampaign.SaveFailure(roomNumber);
         ElapsedSeconds = Time.time - GlobalStartTime;
     }
 

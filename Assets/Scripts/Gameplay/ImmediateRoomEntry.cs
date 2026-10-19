@@ -15,9 +15,10 @@ public class ImmediateRoomEntry : MonoBehaviour
     void Start()
     {
         GameState.EnsureStarted();
+        if (GameState.FailedRoomNumber > 1 || GameState.IsRoomSolved(roomNumber)) return;
         GameState.SetCheckpoint(roomNumber, Inventory.Instance != null ? Inventory.Instance.SnapshotIds() : new List<string>());
         timer?.BeginCountdown();
         if (!string.IsNullOrEmpty(objectiveText) && ObjectiveToast.Instance != null)
-            ObjectiveToast.Instance.Show(objectiveText);
+            ObjectiveToast.Instance.Show(NarrativeText.Entry(roomNumber, objectiveText));
     }
 }

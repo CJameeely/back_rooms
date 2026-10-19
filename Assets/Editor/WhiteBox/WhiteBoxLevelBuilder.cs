@@ -460,16 +460,16 @@ namespace WhiteBoxKit
             SpawnLocal(P["Chair"], r.contentGroup, new Vector3(-1.8f, 0, -0.9f), Quaternion.Euler(0, 200f, 0));
             SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(2f, 0, 2f), Quaternion.identity);
 
-            // Exit door on the free wall (West), temporarily sealed with a plain slab.
+            // Exit door on the free wall (North), temporarily sealed with a plain slab.
             Transform walls = r.instance.Find("Walls");
-            Transform westCenter = walls.Find("Wall_West_Center");
-            if (westCenter != null)
+            Transform northCenter = walls.Find("Wall_North_Center");
+            if (northCenter != null)
             {
-                Vector3 pos = westCenter.position;
-                Quaternion rot = westCenter.rotation;
-                UnityEngine.Object.DestroyImmediate(westCenter.gameObject);
+                Vector3 pos = northCenter.position;
+                Quaternion rot = northCenter.rotation;
+                UnityEngine.Object.DestroyImmediate(northCenter.gameObject);
                 GameObject exitDoor = (GameObject)PrefabUtility.InstantiatePrefab(P["Wall_Door"], walls);
-                exitDoor.name = "Wall_West_Center";
+                exitDoor.name = "Wall_North_Center";
                 exitDoor.transform.position = pos;
                 exitDoor.transform.rotation = rot;
 

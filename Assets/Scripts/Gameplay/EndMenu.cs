@@ -19,16 +19,18 @@ public class EndMenu : MonoBehaviour
         Cursor.visible = true;
         if (GameState.Won)
         {
-            titleText.text = "YOU FOUND THE WAY OUT";
+            titleText.text = FullCampaign.Ending == "true" ? "YOU NOCLIPPED OUT" : "YOU FOUND A DOOR";
             int total = Mathf.Max(0, Mathf.RoundToInt(GameState.ElapsedSeconds));
-            subText.text = $"Time: {total / 60:00}:{total % 60:00}";
+            subText.text = $"Time: {total / 60:00}:{total % 60:00}" + (FullCampaign.Ending == "normal" ? "\nThe door led back to the beginning." : "\nCampus lab. 3:08 AM.");
+            subText.fontSize = 23;
             if (retryButton != null) retryButton.SetActive(false);
             if (playAgainButton != null) playAgainButton.SetActive(true);
         }
         else
         {
             titleText.text = "THE LIGHTS WENT OUT";
-            subText.text = $"Room {GameState.FailedRoomNumber} ran out of light.";
+            subText.text = $"The hum stops. The same room returns.\nRoom {GameState.FailedRoomNumber}: follow the traces again.";
+            subText.fontSize = 23;
             if (retryButton != null) retryButton.SetActive(true);
             if (playAgainButton != null) playAgainButton.SetActive(false);
         }
@@ -44,6 +46,7 @@ public class EndMenu : MonoBehaviour
     public void OnPlayAgainPressed()
     {
         GameState.BeginNewGame();
+        StoryExperience.IntroPending = true;
         SceneManager.LoadScene("WhiteBox_LastLight");
     }
 

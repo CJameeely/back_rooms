@@ -8,6 +8,25 @@ namespace WhiteBoxKit
 {
     public static class PlaytestBuild
     {
+        public static void BuildNarrativePreviewAndGame()
+        {
+            BuildMac();
+            BuildRecording();
+        }
+
+        public static void BuildRecording()
+        {
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { "Assets/Scenes/Title.unity", "Assets/Scenes/WhiteBox_LastLight.unity", "Assets/Scenes/End.unity" },
+                locationPathName = "Builds/Recording/The Last Light.app",
+                target = BuildTarget.StandaloneOSX,
+                options = BuildOptions.None,
+                extraScriptingDefines = new[] { "RECORDING_CAPTURE" }
+            });
+            if (report.summary.result != BuildResult.Succeeded) throw new Exception("Recording build failed");
+        }
+
         [MenuItem("Tools/WhiteBox/Build macOS Playtest")]
         public static void BuildMac()
         {

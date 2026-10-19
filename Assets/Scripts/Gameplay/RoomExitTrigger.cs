@@ -18,10 +18,17 @@ public class RoomExitTrigger : MonoBehaviour
         GetComponent<Collider>().isTrigger = true;
     }
 
+    bool _narrativeShown;
+
     void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
         GameState.MarkRoomSolved(roomNumber);
+        if (roomNumber == 2 && !_narrativeShown && ObjectiveToast.Instance != null)
+        {
+            _narrativeShown = true;
+            ObjectiveToast.Instance.Show("Another room. The same hum. Scratches count rooms someone thought were new.");
+        }
 
         if (isFinalExit)
         {

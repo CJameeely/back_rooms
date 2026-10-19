@@ -1,0 +1,295 @@
+[
+  {
+    "id": "industrial_panel",
+    "source": "/Users/xiaobang/Downloads/industrial+panel+3d+model.glb",
+    "original_faces": 81321,
+    "game_faces": 14000,
+    "blender_size": [
+      0.979766845703125,
+      0.06748199462890625,
+      0.547515869140625
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "vintage_dial_timer",
+    "source": "/Users/xiaobang/Downloads/vintage+dial+timer+3d+model.glb",
+    "original_faces": 92262,
+    "game_faces": 13999,
+    "blender_size": [
+      0.980438232421875,
+      0.743377685546875,
+      0.980224609375
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "vintage_calculator",
+    "source": "/Users/xiaobang/Downloads/vintage+calculator+3d+model.glb",
+    "original_faces": 86145,
+    "game_faces": 14000,
+    "blender_size": [
+      0.61370849609375,
+      0.3207550048828125,
+      0.979278564453125
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "space_station_tile",
+    "source": "/Users/xiaobang/Downloads/space+station+tile+3d+model.glb",
+    "original_faces": 81189,
+    "game_faces": 13999,
+    "blender_size": [
+      0.980560302734375,
+      0.1450653076171875,
+      0.977325439453125
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "old_parchment_folder",
+    "source": "/Users/xiaobang/Downloads/old+parchment+folder+3d+model.glb",
+    "original_faces": 94278,
+    "game_faces": 94278,
+    "blender_size": [
+      0.97869873046875,
+      0.1573333740234375,
+      0.711944580078125
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    },
+    "mesh_policy": "Original topology retained for close-up UV fidelity"
+  },
+  {
+    "id": "metal_cabinet",
+    "source": "/Users/xiaobang/Downloads/metal+cabinet+3d+model.glb",
+    "original_faces": 69286,
+    "game_faces": 14000,
+    "blender_size": [
+      0.381256103515625,
+      0.362518310546875,
+      0.97821044921875
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "golden_key",
+    "source": "/Users/xiaobang/Downloads/golden+key+3d+model.glb",
+    "original_faces": 99096,
+    "game_faces": 14000,
+    "blender_size": [
+      0.40838623046875,
+      0.1558074951171875,
+      0.979949951171875
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "metal_doorbell_button",
+    "source": "/Users/xiaobang/Downloads/metal+doorbell+button+3d+model.glb",
+    "original_faces": 92928,
+    "game_faces": 14000,
+    "blender_size": [
+      0.540191650390625,
+      0.2598724365234375,
+      0.97955322265625
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "vintage_submarine_lantern",
+    "source": "/Users/xiaobang/Downloads/vintage+submarine+lantern+3d+model.glb",
+    "original_faces": 97816,
+    "game_faces": 13999,
+    "blender_size": [
+      0.961761474609375,
+      0.307342529296875,
+      0.978057861328125
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "industrial_connector_base",
+    "source": "/Users/xiaobang/Downloads/industrial+connector+base+3d+model.glb",
+    "original_faces": 98649,
+    "game_faces": 14000,
+    "blender_size": [
+      0.980010986328125,
+      0.976654052734375,
+      0.733978271484375
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "industrial_panel_1",
+    "source": "/Users/xiaobang/Downloads/industrial+panel+3d+model (1).glb",
+    "original_faces": 84034,
+    "game_faces": 14000,
+    "blender_size": [
+      0.978729248046875,
+      0.17523956298828125,
+      0.97607421875
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "metal_tray",
+    "source": "/Users/xiaobang/Downloads/metal+tray+3d+model.glb",
+    "original_faces": 86220,
+    "game_faces": 86220,
+    "blender_size": [
+      0.982269287109375,
+      0.604644775390625,
+      0.10181045532226562
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    },
+    "mesh_policy": "Original topology retained for close-up UV fidelity"
+  },
+  {
+    "id": "metal_storage_box",
+    "source": "/Users/xiaobang/Downloads/metal+storage+box+3d+model.glb",
+    "original_faces": 81246,
+    "game_faces": 14000,
+    "blender_size": [
+      0.97882080078125,
+      0.5811767578125,
+      0.554443359375
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "vintage_metal_toolbox",
+    "source": "/Users/xiaobang/Downloads/vintage+metal+toolbox+3d+model.glb",
+    "original_faces": 90031,
+    "game_faces": 90031,
+    "blender_size": [
+      0.980010986328125,
+      0.741607666015625,
+      0.557952880859375
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    },
+    "mesh_policy": "Original topology retained for close-up UV fidelity"
+  },
+  {
+    "id": "rusty_framed_mirror",
+    "source": "/Users/xiaobang/Downloads/rusty+framed+mirror+3d+model.glb",
+    "original_faces": 80154,
+    "game_faces": 14000,
+    "blender_size": [
+      0.4508514404296875,
+      0.62841796875,
+      0.979461669921875
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  },
+  {
+    "id": "metal_stool",
+    "source": "/Users/xiaobang/Downloads/metal+stool+3d+model.glb",
+    "original_faces": 89020,
+    "game_faces": 89020,
+    "blender_size": [
+      0.916351318359375,
+      0.979888916015625,
+      0.91558837890625
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    },
+    "mesh_policy": "Original topology retained for close-up UV fidelity"
+  },
+  {
+    "id": "industrial_monitor",
+    "source": "/Users/xiaobang/Downloads/industrial+monitor+3d+model.glb",
+    "original_faces": 82468,
+    "game_faces": 82468,
+    "blender_size": [
+      0.978179931640625,
+      0.329559326171875,
+      0.952239990234375
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    },
+    "mesh_policy": "Original topology retained for close-up UV fidelity"
+  },
+  {
+    "id": "old_light_switch",
+    "source": "/Users/xiaobang/Downloads/old+light+switch+3d+model.glb",
+    "original_faces": 91226,
+    "game_faces": 14000,
+    "blender_size": [
+      0.61639404296875,
+      0.555694580078125,
+      0.97943115234375
+    ],
+    "maps": {
+      "BaseColor": "BaseColor.jpg",
+      "Normal": "Normal.png",
+      "MetalRough": "MetalRough.jpg"
+    }
+  }
+]

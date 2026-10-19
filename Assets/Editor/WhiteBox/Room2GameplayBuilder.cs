@@ -350,10 +350,10 @@ namespace WhiteBoxKit
             cardImg.color = new Color(0.25f, 0.6f, 0.85f, 0.35f);
             ui.cardRect = card;
 
-            UIBuilder.AddText(card, "Notch", "◢", 32, TextAlignmentOptions.Center,
+            UIBuilder.AddText(card, "Notch", "▲", 32, TextAlignmentOptions.Center,
                 new Color(1f, 1f, 1f, 0.95f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18, -18), new Vector2(36, 36));
 
-            UIBuilder.AddText(panel, "FrameNotch", "◤", 28, TextAlignmentOptions.Center,
+            UIBuilder.AddText(panel, "FrameNotch", "▲", 28, TextAlignmentOptions.Center,
                 new Color(0.55f, 0.55f, 0.55f, 0.8f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(-gridSize / 2f - 16, 30f + gridSize / 2f + 16), new Vector2(36, 36));
 
@@ -431,7 +431,7 @@ namespace WhiteBoxKit
             ui.roomNumberForFastForward = 2;
             ui.validatorBehaviour = validator;
             ui.penaltyTimer = timer;
-            ui.wrongGuessPenalty = 10f;
+            ui.wrongGuessPenalty = 5f;
             keypadController.ui = ui;
         }
 

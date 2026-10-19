@@ -34,7 +34,26 @@ public class RoomTimer : MonoBehaviour
     public LightSwitchClue linkedSwitchClue;
 
     public bool HasExpired => timerEnabled && _elapsed >= totalDuration;
-    public bool IsRunning => _started && !_blackoutStarted;
+    public bool IsRunning => _started && !_blackoutStarted && !_completed;
+    public float RemainingSeconds => Mathf.Max(0, totalDuration - _elapsed);
+    bool _completed;
+    public void StopCountdown() { _completed = true; StopAllCoroutines(); }
+    float _stableUntil;
+    public void AddDiscoveryTime()
+    {
+        if (_completed || _blackoutStarted) return;
+        _elapsed -= 45f;
+        _stableUntil = Time.time + 3f;
+        StopAllCoroutines();
+        _flickerStarted = _shutoffStarted = false;
+        _off.Clear();
+        foreach (var light in roomLights)
+        {
+            if (!light || (light == linkedLight && linkedSwitchClue != null && linkedSwitchClue.IsReadable)) continue;
+            light.enabled = true;
+            if (_panelInstances != null && _panelInstances.TryGetValue(light, out var mat)) mat.SetColor("_EmissionColor", _panelBaseEmission[light]);
+        }
+    }
 
     bool _started;
     float _elapsed;
@@ -46,7 +65,9 @@ public class RoomTimer : MonoBehaviour
 
     public void BeginCountdown()
     {
-        if (_started || !timerEnabled) return;
+        if (_started || !timerEnabled || _completed || GameState.IsRoomSolved(roomNumber)) return;
+        if (FullCampaign.FailedRooms.Contains(roomNumber)) totalDuration += 30f;
+        flickerWindow = totalDuration * .3f; shutoffWindow = totalDuration * .05f;
         _started = true;
 
         _shutoffOrder = roomLights.OrderBy(_ => Random.value).ToList();
@@ -65,8 +86,10 @@ public class RoomTimer : MonoBehaviour
     /// visual flash so the player feels it even though no number is ever shown.
     public void Penalty(float seconds)
     {
-        if (!_started || _blackoutStarted) return;
-        _elapsed += seconds;
+        if (!_started || _blackoutStarted || _completed) return;
+        float[] limits = {totalDuration*.7f, totalDuration*.85f, totalDuration*.95f, totalDuration};
+        float next = limits.FirstOrDefault(t => t > _elapsed + .001f);
+        _elapsed = Mathf.Min(_elapsed + seconds, next > 0 ? next : totalDuration);
         StartCoroutine(PenaltyFlash());
     }
 
@@ -85,9 +108,12 @@ public class RoomTimer : MonoBehaviour
         }
     }
 
+    public static bool ReadingPaused => StoryExperience.IsReading ||
+        (FirstPersonController.Instance != null && !FirstPersonController.Instance.InputEnabled);
+
     void Update()
     {
-        if (!_started || !timerEnabled || _blackoutStarted) return;
+        if (!_started || !timerEnabled || _blackoutStarted || _completed || ReadingPaused) return;
 
         _elapsed += Time.deltaTime;
         float remaining = totalDuration - _elapsed;
@@ -99,13 +125,13 @@ public class RoomTimer : MonoBehaviour
             return;
         }
 
-        if (remaining <= flickerWindow && !_flickerStarted)
+        if (Time.time >= _stableUntil && remaining <= flickerWindow && !_flickerStarted)
         {
             _flickerStarted = true;
             StartCoroutine(FlickerLoop());
         }
 
-        if (remaining <= shutoffWindow && !_shutoffStarted)
+        if (Time.time >= _stableUntil && remaining <= shutoffWindow && !_shutoffStarted)
         {
             _shutoffStarted = true;
             StartCoroutine(ShutoffSequence());
@@ -114,15 +140,16 @@ public class RoomTimer : MonoBehaviour
 
     IEnumerator FlickerLoop()
     {
-        while (!_shutoffStarted && !_blackoutStarted)
+        while (!_shutoffStarted && !_blackoutStarted && !_completed)
         {
             float remaining = totalDuration - _elapsed;
             // Delay between random blinks shrinks from ~1.2s down to ~0.15s as the flicker
             // window runs out, so flickering visibly speeds up toward the shutoff phase.
             float progress = Mathf.InverseLerp(flickerWindow, shutoffWindow, Mathf.Max(remaining, shutoffWindow));
-            float delay = Mathf.Lerp(1.2f, 0.15f, progress);
+            float delay = remaining > totalDuration*.15f ? Random.Range(20f,30f) : Mathf.Lerp(1.2f, 0.15f, progress);
             yield return new WaitForSeconds(delay);
 
+            while (ReadingPaused) yield return null;
             if (roomLights.Length == 0) continue;
             Light l = roomLights[Random.Range(0, roomLights.Length)];
             if (l == null || _off.Contains(l)) continue;
@@ -133,6 +160,7 @@ public class RoomTimer : MonoBehaviour
     IEnumerator QuickBlink(Light l)
     {
         l.enabled = false;
+        FullCampaign.Instance?.FlashJanitor(this);
         yield return new WaitForSeconds(0.08f);
         if (!_off.Contains(l)) l.enabled = true;
     }
@@ -143,6 +171,7 @@ public class RoomTimer : MonoBehaviour
         float interval = shutoffWindow / _shutoffOrder.Count;
         foreach (Light l in _shutoffOrder)
         {
+            while (ReadingPaused) yield return null;
             if (l == null) continue;
             TurnOff(l);
             yield return new WaitForSeconds(interval);

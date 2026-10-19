@@ -58,6 +58,7 @@ public class CardAlignmentUI : MonoBehaviour
     {
         if (IsOpen) return;
         panelRoot.SetActive(true);
+        NarrativeText.Calibration(panelRoot);
         _rotationSteps = Aligned ? 0 : startRotationSteps;
         ApplyRotationVisual();
         FirstPersonController.Instance.SetInputEnabled(false);

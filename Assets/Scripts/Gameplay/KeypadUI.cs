@@ -78,6 +78,7 @@ public class KeypadUI : MonoBehaviour
         if (roomNumberForFastForward > 0 && GameState.IsRoomSolved(roomNumberForFastForward))
         {
             Solved = true;
+            penaltyTimer?.StopCountdown();
             if (door != null) door.transform.localPosition = doorOpenLocalPosition;
         }
     }
@@ -122,6 +123,7 @@ public class KeypadUI : MonoBehaviour
         if (Validator.Validate(_entered.ToArray()))
         {
             Solved = true;
+            penaltyTimer?.StopCountdown();
             panelRoot.SetActive(false);
             FirstPersonController.Instance.SetInputEnabled(true);
             door.SlideTo(doorOpenLocalPosition, doorSlideDuration);
