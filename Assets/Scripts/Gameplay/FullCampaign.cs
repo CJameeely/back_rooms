@@ -27,6 +27,8 @@ public class FullCampaign : MonoBehaviour
     public bool RoomFourSolved => GameState.IsRoomSolved(4);
     public bool ArrowsVisible { get; private set; }
     public bool MirrorVisible { get; private set; }
+    public bool ArrowsDiscovered { get; private set; }
+    public bool MirrorDiscovered { get; private set; }
     public int MirrorStep { get; private set; }
     public readonly bool[] Breakers = new bool[4];
     public readonly int[] Dials = new int[4];
@@ -72,6 +74,7 @@ public class FullCampaign : MonoBehaviour
         player = FirstPersonController.Instance.transform;
         neutral = Mat(new Color(.46f,.49f,.47f)); metal = Mat(new Color(.18f,.23f,.23f)); paper = Mat(new Color(.72f,.72f,.61f));
         BuildRoomThree(); BuildRoomFour(); BuildExit(); BuildJanitor(); RestoreCheckpoint();
+        gameObject.AddComponent<CampaignGuidance>();
         CurrentFootprints.Clear(); CurrentTouches.Clear();
         foreach (var p in LastFootprints) Box("PreviousFootprint",p + Vector3.up*.012f,new Vector3(.10f,.005f,.23f),metal,false);
         foreach (var p in LastTouches) Box("PreviousTouch",p,new Vector3(.045f,.045f,.015f),paper,false);
@@ -125,7 +128,7 @@ public class FullCampaign : MonoBehaviour
         Box("WorkbenchLowerShelf",new Vector3(14.7f,.34f,23.35f),new Vector3(.65f,.08f,.5f),neutral);
         Box("FShelf",new Vector3(10.65f,1f,17.5f),new Vector3(.55f,.08f,.6f),neutral);
         Target("LampCradle","cradle",new Vector3(18.4f,1f,25.2f),new Vector3(.75f,.16f,.4f),"Fit lamp parts / take inspection lamp");
-        Label("CradleLabel","Hold it low.\nShadows show what light erases.",new Vector3(18.4f,1.45f,25f),.12f);
+        Label("CradleLabel","F  SWITCH ON LAMP\nAim at the plate above the four switches.",new Vector3(18.4f,1.45f,25f),.12f);
         Target("BlankPlate","plate",new Vector3(17.35f,1.55f,26.65f),new Vector3(1.1f,.4f,.05f),"Inspect blank plate");
         arrowText=Label("R3Arrows","",new Vector3(17.35f,1.55f,26.61f),.17f,1.35f);arrowText.textWrappingMode=TextWrappingModes.NoWrap;arrowText.gameObject.SetActive(false);
         for(int i=0;i<4;i++)
@@ -264,14 +267,27 @@ public class FullCampaign : MonoBehaviour
             LampOn=!LampOn;lamp.enabled=LampOn;
             if(MasterOff && !LampOn)ArmDarkEscape();
         }
-        ArrowsVisible=Grazing(new Vector3(17.35f,1.55f,26.61f),Vector3.back);
+        var plateDirection = new Vector3(17.35f,1.55f,26.61f) - FirstPersonController.Instance.Camera.transform.position;
+        bool plateLit = LampOn && plateDirection.magnitude < 3f && Vector3.Angle(FirstPersonController.Instance.Camera.transform.forward, plateDirection) < 28f;
+        if (plateLit && !ArrowsDiscovered)
+        {
+            ArrowsDiscovered = true;
+            ObjectiveToast.Instance?.Show("Arrows recorded. Match the four switches left to right, then press E on the tall switch to submit.");
+        }
+        ArrowsVisible=ArrowsDiscovered;
         arrowText.gameObject.SetActive(ArrowsVisible);
         arrowText.text=string.Join("   ",GameState.Room3ArrowUp.Select(up=>up?"▲":"▼").ToArray());
         bool names=Grazing(new Vector3(16,1.45f,21.15f),Vector3.forward);hiddenNames.SetActive(names);
         if(names && !namesReward) {namesReward=true;timer3.AddDiscoveryTime();}
         var view=FirstPersonController.Instance.Camera.transform;
-        bool shine=LampOn && Vector3.Distance(view.position,new Vector3(22,1.25f,30))<2.5f && Vector3.Angle(view.forward,new Vector3(22,1.25f,30)-view.position)<18;
-        MirrorVisible=shine && MirrorStep==3;mirrorFace.SetActive(MirrorVisible);map.SetActive(shine && MirrorStep==6);
+        bool shine=LampOn && Vector3.Distance(view.position,new Vector3(22,1.25f,30))<3.5f && Vector3.Angle(view.forward,new Vector3(22,1.25f,30)-view.position)<30;
+        MirrorVisible=shine && MirrorStep==3;
+        if (MirrorVisible && !MirrorDiscovered)
+        {
+            MirrorDiscovered=true;
+            ObjectiveToast.Instance?.Show("Symbol order recorded. Open the maintenance panel across the room and match the digits from Room 1.");
+        }
+        mirrorFace.SetActive(MirrorVisible);map.SetActive(shine && MirrorStep==6);
         if(map.activeSelf && !mapReward){mapReward=true;timer4.AddDiscoveryTime();}
         if(MasterOff && !DarkEscapeArmed && Time.time>=nextFinalBlink)
         {nextFinalBlink=Time.time+2;StartCoroutine(FinalBlink());}
@@ -296,8 +312,8 @@ public class FullCampaign : MonoBehaviour
                 if(Inventory.Instance.TryAdd(new InventoryItem(id,id,Color.gray)))target.gameObject.SetActive(false);break;
             case "cradle":
                 if(!LampOwned) {Inventory.Instance.Remove("LampBase");Inventory.Instance.Remove("LampHead");Inventory.Instance.TryAdd(new InventoryItem("InspectionLamp","Inspection lamp",Color.yellow));LampOwned=true;CreateLamp();}
-                Inventory.Instance.ShowMessage("Inspection lamp assembled. F toggles the beam.");ObjectiveToast.Instance.Show("F toggles the inspection beam. Hold it nearly parallel to the blank plate.");break;
-            case "plate": StoryExperience.Instance.Read("BLANK PLATE","The surface looks blank from here.\nHold the inspection light low, almost parallel to the plate.");break;
+                LampOn=true;lamp.enabled=true;Inventory.Instance.ShowMessage("Inspection lamp ready and switched on. F toggles it.");ObjectiveToast.Instance.Show("Aim at the plate above the four switches. Its arrows show the switch positions.");break;
+            case "plate": StoryExperience.Instance.Read("BLANK PLATE","Switch on your inspection lamp with F.\nStand within three metres and aim at this plate. No crouching or special angle is needed.\n\nRead the four arrows left to right. Press E on each switch below to match UP or DOWN. Then press E on the tall switch at the right to submit.");break;
             case "breaker": Breakers[target.index]=!Breakers[target.index];breakerLabels[target.index].text=Breakers[target.index]?"UP":"DOWN";break;
             case "submit3":
                 if(Breakers.SequenceEqual(GameState.Room3ArrowUp)){GameState.MarkRoomSolved(3);timer3.StopCountdown();gate3.SetActive(false);ObjectiveToast.Instance.Show("The repair circuit holds. Take the lamp with you.");}

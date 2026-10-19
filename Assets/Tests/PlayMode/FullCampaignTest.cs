@@ -11,6 +11,33 @@ public class FullCampaignTest
     static void Place(Vector3 position)
     { var p=FirstPersonController.Instance;var cc=p.GetComponent<CharacterController>();cc.enabled=false;p.transform.position=position;cc.enabled=true; }
     [UnityTest]
+    public IEnumerator FrontFacingLightRevealsAndRemembersClues()
+    {
+        GameState.BeginNewGame();yield return SceneManager.LoadSceneAsync("WhiteBox_LastLight");
+        yield return null;yield return null;yield return null;
+        StoryExperience.Instance.Close();
+        Use("LampBase");Use("LampHead");Use("LampCradle");
+        var game=FullCampaign.Instance;
+        Assert.IsTrue(game.LampOn,"Assembly should switch the inspection lamp on.");
+        var player=FirstPersonController.Instance;player.enabled=false;
+        Place(new Vector3(17.35f,0,24.6f));
+        player.Camera.transform.LookAt(new Vector3(17.35f,1.55f,26.61f));
+        yield return null;yield return null;
+        Assert.IsTrue(game.ArrowsDiscovered,"Looking straight at the plate should reveal the arrows.");
+        player.Camera.transform.Rotate(0,180,0);
+        yield return null;
+        Assert.IsTrue(game.ArrowsVisible,"The discovered sequence must remain readable after looking away.");
+        GameState.MarkRoomSolved(3);
+        Place(new Vector3(22,0,31.8f));
+        player.Camera.transform.LookAt(new Vector3(22,1.25f,30));
+        Use("MirrorControl");Use("MirrorControl");Use("MirrorControl");
+        yield return null;yield return null;
+        Assert.IsTrue(game.MirrorDiscovered);
+        StringAssert.Contains("Matching digits",game.GetComponent<CampaignGuidance>().CurrentHelp);
+        player.Camera.transform.Rotate(0,180,0);yield return null;
+        Assert.IsTrue(game.MirrorDiscovered,"Record the reflection instead of requiring repeated alignment.");
+    }
+    [UnityTest]
     public IEnumerator NorthPassageDecalsDoNotBlockAStandingPlayer()
     {
         GameState.BeginNewGame();yield return SceneManager.LoadSceneAsync("WhiteBox_LastLight");yield return null;yield return null;yield return null;
