@@ -10,7 +10,7 @@ public static class NarrativeText
     public static string Entry(int room, string fallback)
     {
         if (room == 1) return "Four marks, four numbers. The door reads them in its own order.";
-        if (room == 2) return "The card you need is somewhere you can't reach yet.";
+        if (room == 2) return "An access card is above ceiling cover L5. Move the stool beneath it to reach the cover.";
         return fallback;
     }
     public static void Paper(GameObject panel)

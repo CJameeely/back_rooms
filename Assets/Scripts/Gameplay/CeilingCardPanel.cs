@@ -14,9 +14,9 @@ public class CeilingCardPanel : MonoBehaviour, IInteractable
 
     bool _taken;
 
-    public string InteractionPrompt => _taken ? null : "Open light cover";
+    public string InteractionPrompt => _taken ? null : "Open L5 cover / take access card";
     public bool CanInteract => !_taken && IsPlayerCloseEnough();
-    public string BlockedReason => _taken ? null : (IsPlayerCloseEnough() ? null : "Out of reach");
+    public string BlockedReason => _taken ? null : (IsPlayerCloseEnough() ? null : "Walk onto the stool under L5, then look up");
 
     bool IsPlayerCloseEnough()
     {
@@ -34,6 +34,7 @@ public class CeilingCardPanel : MonoBehaviour, IInteractable
         _taken = true;
         StartCoroutine(FlipOpen());
         if (Inventory.Instance != null) Inventory.Instance.TryAdd(cardItem);
+        ObjectiveToast.Instance?.Show("Access card collected. Find the red card reader on the sample cabinet and press E.");
     }
 
     IEnumerator FlipOpen()

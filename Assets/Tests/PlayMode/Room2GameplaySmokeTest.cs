@@ -56,7 +56,7 @@ public class Room2GameplaySmokeTest
         // Standing on the floor, far below the ceiling, L5 must be unreachable even though a
         // raycast could physically hit it from here.
         Assert.IsFalse(panel.CanInteract, "L5 should be out of reach while standing on the floor.");
-        Assert.AreEqual("Out of reach", panel.BlockedReason);
+        StringAssert.Contains("stool", panel.BlockedReason);
 
         // Pick up the stool.
         GameObject stool = Find("Gameplay_Stool");
@@ -73,6 +73,15 @@ public class Room2GameplaySmokeTest
         player.transform.position = new Vector3(l5.transform.position.x, 0f, l5.transform.position.z - 0.3f);
         player.transform.rotation = Quaternion.identity;
         cc.enabled = true;
+        SetLookPitch(fpc, 45f);
+        yield return null;
+        carrier.RefreshPlacement();
+        Assert.AreEqual("E   Place stool", carrier.PlacementPrompt,
+            "A normal downward glance must allow floor placement beyond the old eye-distance limit.");
+        SetLookPitch(fpc, 0f);
+        yield return null;
+        Assert.IsFalse(carrier.TryPlace(), "Looking horizontally must not place using a stale floor hit.");
+        Assert.IsTrue(carrier.IsCarrying);
         SetLookPitch(fpc, 75f); // look mostly straight down; a plain Camera.transform assignment
                                  // gets stomped every frame by FPC's own Update() re-applying _pitch
         yield return null; // let StoolCarrier.Update() raycast against the floor this frame

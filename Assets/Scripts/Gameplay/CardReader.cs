@@ -38,6 +38,7 @@ public class CardReader : MonoBehaviour, IInteractable
             if (indicatorRenderer != null) indicatorRenderer.material.color = grantedColor;
             cabinetDoor.SlideTo(cabinetOpenLocalPosition, slideDuration);
             if (revealOnUnlock != null) revealOnUnlock.SetActive(true);
+            ObjectiveToast.Instance?.Show("Cabinet unlocked. Take the calibration card inside, then examine the number display.");
         }
         else
         {

@@ -27,6 +27,7 @@ public class PlayerInteractor : MonoBehaviour
         bool hitSomething = Physics.Raycast(ray, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Collide);
 
         bool carryingStool = StoolCarrier.Instance != null && StoolCarrier.Instance.IsCarrying;
+        if (carryingStool) StoolCarrier.Instance.RefreshPlacement();
         _current = hitSomething ? hit.collider.GetComponentInParent<IInteractable>() : null;
 
         if (promptText != null)
@@ -37,7 +38,7 @@ public class PlayerInteractor : MonoBehaviour
             if (carryingStool && StoolCarrier.Instance.NearBlockedDoor)
                 promptText.text = "Put the stool down first";
             else if (carryingStool)
-                promptText.text = "E   Place stool";
+                promptText.text = StoolCarrier.Instance.PlacementPrompt;
             else if (_current != null && _current.CanInteract && !string.IsNullOrEmpty(_current.InteractionPrompt))
                 promptText.text = $"E   {_current.InteractionPrompt}";
             else if (_current != null && !_current.CanInteract && !string.IsNullOrEmpty(_current.BlockedReason))

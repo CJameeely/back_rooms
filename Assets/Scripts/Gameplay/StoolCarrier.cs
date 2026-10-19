@@ -24,6 +24,8 @@ public class StoolCarrier : MonoBehaviour
     /// other prompt. Cleared every frame in LateUpdate so it only reflects "right now".
     public bool NearBlockedDoor;
 
+    public string PlacementPrompt { get; private set; } = "Look down at the floor to place stool";
+
     bool _placementValid;
     Vector3 _pendingPlacePos;
     Camera _cam;
@@ -42,11 +44,13 @@ public class StoolCarrier : MonoBehaviour
         IsCarrying = true;
         if (stoolVisual != null) stoolVisual.SetActive(false);
         if (ghostPreview != null) ghostPreview.gameObject.SetActive(true);
+        ObjectiveToast.Instance?.Show("Find ceiling cover L5. Aim at the floor beneath it, then press E to place the stool.");
     }
 
     public bool TryPlace()
     {
         if (!IsCarrying) return false;
+        RefreshPlacement();
         if (!_placementValid) return false;
 
         IsCarrying = false;
@@ -56,30 +60,43 @@ public class StoolCarrier : MonoBehaviour
             stoolVisual.SetActive(true);
         }
         if (ghostPreview != null) ghostPreview.gameObject.SetActive(false);
+        var panel = FindFirstObjectByType<CeilingCardPanel>();
+        bool beneathCover = panel != null && Vector2.Distance(
+            new Vector2(_pendingPlacePos.x, _pendingPlacePos.z),
+            new Vector2(panel.transform.position.x, panel.transform.position.z)) < .85f;
+        ObjectiveToast.Instance?.Show(beneathCover
+            ? "Walk forward onto the stool (no jump needed). Look up at L5 and press E to take the access card."
+            : "Stool placed. It needs to be directly under ceiling cover L5. Press E on the stool to move it.");
         return true;
     }
 
-    void Update()
+    void Update() => RefreshPlacement();
+
+    public void RefreshPlacement()
     {
+        _placementValid = false;
         if (!IsCarrying || _cam == null || ghostPreview == null) return;
 
+        // Reach is measured across the floor, not from eye height along a diagonal.
         Ray ray = new Ray(_cam.transform.position, _cam.transform.forward);
-        bool hit = Physics.Raycast(ray, out RaycastHit info, maxPlaceDistance + 1f, ~0, QueryTriggerInteraction.Ignore);
-
+        bool hit = Physics.Raycast(ray, out RaycastHit info, 6f, ~0, QueryTriggerInteraction.Ignore);
+        PlacementPrompt = "Look down at the floor to place stool";
         if (hit)
         {
             bool flatEnough = Vector3.Angle(info.normal, Vector3.up) < 15f;
-            bool closeEnough = info.distance <= maxPlaceDistance;
+            Vector3 offset = info.point - _cam.transform.position;
+            offset.y = 0;
+            bool closeEnough = offset.magnitude <= maxPlaceDistance;
             bool inRoom = roomFloorBounds.Contains(new Vector3(info.point.x, roomFloorBounds.center.y, info.point.z));
-            _placementValid = flatEnough && closeEnough && inRoom;
+            bool onFloor = Mathf.Abs(info.point.y - roomFloorBounds.min.y) < .35f;
+            _placementValid = flatEnough && closeEnough && inRoom && onFloor;
             _pendingPlacePos = info.point;
             ghostPreview.position = info.point;
+            PlacementPrompt = !flatEnough || !onFloor ? "Aim at the floor, not furniture" :
+                !inRoom ? "Place the stool inside this room" :
+                !closeEnough ? "Too far - aim closer to your feet" : "E   Place stool";
         }
-        else
-        {
-            _placementValid = false;
-        }
-
+        ghostPreview.gameObject.SetActive(hit);
         if (ghostRenderer != null)
             ghostRenderer.material.color = _placementValid ? validColor : invalidColor;
     }

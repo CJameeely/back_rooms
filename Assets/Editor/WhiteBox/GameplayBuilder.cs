@@ -248,9 +248,9 @@ namespace WhiteBoxKit
             // Wall text hidden behind the cabinet's current corner spot; only switched on once
             // the cabinet slides away, so it can't be read early. Mounted on the north wall
             // right behind the cabinet's corner position.
-            GameObject revealGO = CreateLabel("● 0", content, new Vector3(2f, 1.4f, RoomHalf - 0.001f), content, roomCenter, doubleSided: false);
+            GameObject revealGO = CreateLabel("● 0", content, new Vector3(2f, 1.4f, RoomHalf - 0.3f), content, roomCenter, doubleSided: false);
             revealGO.name = "Gameplay_CabinetReveal";
-            revealGO.AddComponent<Billboard>();
+            // Keep wall writing parallel to the wall, clear of the plaster facing.
             ClueMarker marker = revealGO.AddComponent<ClueMarker>();
             marker.symbol = ClueSymbol.Circle;
             marker.label = revealGO.GetComponent<TMP_Text>();
