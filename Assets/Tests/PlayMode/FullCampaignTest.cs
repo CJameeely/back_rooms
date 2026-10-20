@@ -10,6 +10,14 @@ public class FullCampaignTest
     static void Use(string name) => GameObject.Find(name).GetComponent<CampaignInteractable>().Interact(FirstPersonController.Instance.gameObject);
     static void Place(Vector3 position)
     { var p=FirstPersonController.Instance;var cc=p.GetComponent<CharacterController>();cc.enabled=false;p.transform.position=position;cc.enabled=true; }
+    static void CaptureLightResult(Camera camera,string name)
+    {
+        if(System.Environment.GetEnvironmentVariable("LL_LIGHT_CAPTURE")!="1")return;
+        string dir=System.IO.Path.GetFullPath("../output/light_visibility_fix_20261020");System.IO.Directory.CreateDirectory(dir);
+        var rt=new RenderTexture(1280,720,24);camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;
+        var image=new Texture2D(1280,720,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();
+        System.IO.File.WriteAllBytes(dir+"/"+name+".png",image.EncodeToPNG());RenderTexture.active=null;camera.targetTexture=null;rt.Release();Object.Destroy(rt);Object.Destroy(image);
+    }
     [UnityTest]
     public IEnumerator FrontFacingLightRevealsAndRemembersClues()
     {
@@ -24,6 +32,15 @@ public class FullCampaignTest
         player.Camera.transform.LookAt(new Vector3(17.35f,1.55f,26.61f));
         yield return null;yield return null;
         Assert.IsTrue(game.ArrowsDiscovered,"Looking straight at the plate should reveal the arrows.");
+        // Logical discovery is not enough: every enabled mesh must leave the lettering visible.
+        var origin=player.Camera.transform.position;
+        var ray=new Ray(origin,(game.arrowText.transform.position-origin).normalized);
+        float clueDistance=Vector3.Distance(origin,game.arrowText.transform.position);
+        foreach(var renderer in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+            if(renderer.enabled && renderer.GetComponent<TMPro.TMP_Text>()==null && renderer.bounds.IntersectRay(ray,out float hit))
+                Assert.Greater(hit,clueDistance,"Visible lettering is occluded by "+renderer.name);
+        CaptureLightResult(player.Camera,"arrows-visible");
+
         player.Camera.transform.Rotate(0,180,0);
         yield return null;
         Assert.IsTrue(game.ArrowsVisible,"The discovered sequence must remain readable after looking away.");
@@ -33,6 +50,7 @@ public class FullCampaignTest
         Use("MirrorControl");Use("MirrorControl");Use("MirrorControl");
         yield return null;yield return null;
         Assert.IsTrue(game.MirrorDiscovered);
+        CaptureLightResult(player.Camera,"mirror-visible");
         StringAssert.Contains("Matching digits",game.GetComponent<CampaignGuidance>().CurrentHelp);
         player.Camera.transform.Rotate(0,180,0);yield return null;
         Assert.IsTrue(game.MirrorDiscovered,"Record the reflection instead of requiring repeated alignment.");

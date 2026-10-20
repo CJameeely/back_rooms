@@ -90,7 +90,11 @@ public static class ScenePropPlacement
         Legs("WorkbenchShelf",new Vector3(14.7f,.34f,23.35f),new Vector3(.65f,.08f,.5f),.30f);
         // Lamp cradle becomes a real bench, with four legs and a visible top.
         Legs("Cradle",new Vector3(18.4f,1,25.2f),new Vector3(.75f,.16f,.4f),.92f);
-        Solid("BreakerBackboard",new Vector3(17.65f,1.25f,26.725f),new Vector3(2.15f,1.2f,.25f),false);
+        Solid("BreakerBackboard",new Vector3(17.65f,1.25f,26.7675f),new Vector3(2.15f,1.2f,.185f),false);
+        // The mounting plate begins behind the clue plate; short stems connect the controls.
+        // Do not bring the whole board forward: that hides the printed arrows at z=26.61.
+        for(int i=0;i<4;i++)WallMount("Breaker"+i,26.675f);
+        WallMount("MainBreaker",26.675f);
         var cradleLabel=Find("CradleLabel");if(cradleLabel)
         {
             cradleLabel.transform.position=new Vector3(18.76f,1.55f,25.2f);cradleLabel.transform.rotation=Quaternion.Euler(0,90,0);
