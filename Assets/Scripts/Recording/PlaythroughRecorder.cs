@@ -134,7 +134,7 @@ public sealed class PlaythroughRecorder : MonoBehaviour
         }
         Stage("title", "THE LAST LIGHT  |  CJ Evan");
         yield return Hold(5);
-        Button("StartButton").onClick.Invoke();
+        Button("EnterButton").onClick.Invoke();
         yield return Hold(14);
         var player = FirstPersonController.Instance;
         room = player.transform.position + new Vector3(0, 0, 2);
