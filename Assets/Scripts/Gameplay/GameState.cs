@@ -1,3 +1,5 @@
+// @role Static cross-scene game state — per-room codes, solved rooms, checkpoints, win/loss.
+
 using System.Collections.Generic;
 using UnityEngine;
 

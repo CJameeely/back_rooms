@@ -1,3 +1,6 @@
+// @role Title screen — Start begins a brand-new game.
+// @calls GameState
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 

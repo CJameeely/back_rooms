@@ -1,3 +1,5 @@
+// @role Rotates a world-space label to face the camera (yaw only).
+
 using UnityEngine;
 
 /// Rotates a world-space clue label to always face the camera (yaw only), so it reads correctly

@@ -1,3 +1,7 @@
+// @role Room 2 — unlocks the sample cabinet with the access card.
+// @calls Inventory, SlideMover
+// @tune slideDuration:float:0.3-2:cabinet door slide time (s)
+
 using System.Collections;
 using UnityEngine;
 

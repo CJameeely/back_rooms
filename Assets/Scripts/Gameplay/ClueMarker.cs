@@ -1,3 +1,6 @@
+// @role Passive Room 1 clue label — counts as seen just by being looked at.
+// @calls CodeManager
+
 using UnityEngine;
 using TMPro;
 

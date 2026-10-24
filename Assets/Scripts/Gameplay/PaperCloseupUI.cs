@@ -1,3 +1,6 @@
+// @role Full-screen paper-reading overlay for Room 1's Triangle clue.
+// @calls FirstPersonController
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;

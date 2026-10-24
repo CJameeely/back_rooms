@@ -1,3 +1,6 @@
+// @role Marks a room solved on exit; the final one ends the game in victory.
+// @calls GameState
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 

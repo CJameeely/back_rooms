@@ -1,3 +1,6 @@
+// @role Room 1 Clue 2 (Triangle) — opens the paper close-up, marks the clue seen.
+// @calls PaperCloseupUI, CodeManager, ClueTracker
+
 using UnityEngine;
 
 /// Clue 2 (Triangle): the paper itself. E opens the full-screen close-up UI; the clue only

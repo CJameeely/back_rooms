@@ -1,3 +1,6 @@
+// @role Room 2 — blocks/warns the player from carrying the stool out through a doorway.
+// @calls StoolCarrier
+
 using UnityEngine;
 
 /// Sits in a doorway the player shouldn't be able to carry the stool through. `sense` (a trigger

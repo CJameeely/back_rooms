@@ -1,3 +1,7 @@
+// @role Room 2 — rotate-to-align calibration card puzzle, reveals the exit code digits.
+// @calls GameState, Inventory
+// @tune startRotationSteps:int:1-3:90-degree steps away from aligned at start
+
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;

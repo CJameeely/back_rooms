@@ -1,3 +1,6 @@
+// @role First-entry doorway trigger — starts the room timer, sets the save checkpoint, shows the objective toast.
+// @calls GameState, RoomTimer, ObjectiveToast, Inventory
+
 using UnityEngine;
 
 /// Sits in a room's entrance doorway. The player's FIRST pass through it: records a save

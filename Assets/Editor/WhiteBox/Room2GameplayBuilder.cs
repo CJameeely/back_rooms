@@ -191,6 +191,9 @@ namespace WhiteBoxKit
 
             StoolCarrier carrier = managers.AddComponent<StoolCarrier>();
             carrier.stoolVisual = stoolT.gameObject;
+            // Primitive cube pivot is its center, so resting flush on the floor means the object's
+            // own Y sits at half its height above the hit point, not at the hit point itself.
+            carrier.restingPivotOffset = stoolT.localScale.y / 2f;
             pickup.carrier = carrier;
 
             GameObject ghost = GameObject.CreatePrimitive(PrimitiveType.Cube);

@@ -1,3 +1,5 @@
+// @role Generic smooth local-position slide, reused by doors/drawers/cabinets.
+
 using System;
 using System.Collections;
 using UnityEngine;

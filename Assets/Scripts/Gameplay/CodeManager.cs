@@ -1,3 +1,6 @@
+// @role Room 1's 4-digit code source — reads GameState, validates keypad guesses.
+// @calls GameState
+
 using UnityEngine;
 
 public enum ClueSymbol { Circle, Triangle, Square, Bar }

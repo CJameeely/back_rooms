@@ -75,16 +75,30 @@ public class Room2GameplaySmokeTest
         cc.enabled = true;
         SetLookPitch(fpc, 75f); // look mostly straight down; a plain Camera.transform assignment
                                  // gets stomped every frame by FPC's own Update() re-applying _pitch
-        yield return null; // let StoolCarrier.Update() raycast against the floor this frame
+        // Two frames, not one: within a single frame, whether FirstPersonController.Update()
+        // (which applies _pitch to the camera) or StoolCarrier.Update() (which raycasts using
+        // that camera orientation) runs first is unspecified script execution order — it can flip
+        // depending on unrelated scene content. By the second frame the rotation from the first
+        // frame is guaranteed visible to the raycast regardless of that ordering.
+        yield return null;
+        yield return null;
         bool placed = carrier.TryPlace();
         Assert.IsTrue(placed, "Placing near the room center on open floor should be valid.");
         Assert.IsFalse(carrier.IsCarrying);
         Assert.IsTrue(stool.activeSelf, "The real stool should reappear once placed.");
+        // Regression check: TryPlace used to set the stool's position straight to the raycast
+        // floor hit, ignoring that a primitive cube's pivot is its center — it would sink half its
+        // height into the floor, so standing on "top" of it never actually reached minFootHeight,
+        // making L5 permanently "Out of reach" no matter where the player stood.
+        float stoolTopY = stool.transform.position.y + stool.transform.localScale.y / 2f;
+        Assert.That(stoolTopY, Is.EqualTo(stool.transform.localScale.y).Within(0.01f),
+            $"Stool should rest flush on the floor (top at its own height), not sunk in: top={stoolTopY}");
 
-        // Stand on the stool (teleport rather than relying on stepOffset physics here — that's
-        // covered by it simply being set in Stage 1) and take the card.
+        // Stand on the stool (teleport to its actual top surface rather than relying on
+        // stepOffset physics here — that's covered by it simply being set in Stage 1) and take
+        // the card.
         cc.enabled = false;
-        player.transform.position = new Vector3(stool.transform.position.x, 0.45f, stool.transform.position.z);
+        player.transform.position = new Vector3(stool.transform.position.x, stoolTopY, stool.transform.position.z);
         cc.enabled = true;
         yield return null;
         Assert.IsTrue(panel.CanInteract, "Standing on the stool near L5 should now be in reach.");

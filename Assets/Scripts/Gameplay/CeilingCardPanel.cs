@@ -1,3 +1,8 @@
+// @role Room 2 L5 panel — reach-gated access card pickup (foot height + proximity, not raycast).
+// @calls FirstPersonController, Inventory
+// @tune minFootHeight:float:0.2-1:required standing height (m)
+// @tune maxHorizontalDistance:float:0.5-2:required proximity to L5 (m)
+
 using System.Collections;
 using UnityEngine;
 

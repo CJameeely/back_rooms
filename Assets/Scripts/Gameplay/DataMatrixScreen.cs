@@ -1,3 +1,6 @@
+// @role Room 2 matrix screen — opens the alignment UI once the calibration card is in hand.
+// @calls CardAlignmentUI, Inventory
+
 using UnityEngine;
 
 /// The wall-mounted matrix screen. Needs the calibration card in hand to open — once the card has

@@ -1,3 +1,6 @@
+// @role Generic world pickup — E adds it to the inventory and hides it.
+// @calls Inventory
+
 using UnityEngine;
 
 /// Generic "E to pick up, goes into inventory, disappears from the world" object. Reused across

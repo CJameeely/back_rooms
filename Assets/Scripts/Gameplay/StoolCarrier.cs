@@ -1,3 +1,7 @@
+// @role Room 2 — carries/places the stool with a ghost placement preview.
+// @calls FirstPersonController
+// @tune maxPlaceDistance:float:1-4:how far from the player the stool can be placed (m)
+
 using UnityEngine;
 
 /// Carries the Room 2 stool: E on it picks it up (hides the real stool, shows a semi-transparent
@@ -15,6 +19,8 @@ public class StoolCarrier : MonoBehaviour
     public Renderer ghostRenderer;
     public Bounds roomFloorBounds;   // Room 2's floor footprint in world space (XZ matters; Y ignored)
     public float maxPlaceDistance = 2f;
+    [Tooltip("Stool's own pivot-to-base offset (half its height, since a primitive cube's pivot is its center). Added on top of the raycast floor hit so the stool rests ON the floor instead of sinking into it by half its height.")]
+    public float restingPivotOffset = 0.225f;
     public Color validColor = new Color(0.3f, 0.9f, 0.4f, 0.4f);
     public Color invalidColor = new Color(0.9f, 0.3f, 0.3f, 0.4f);
 
@@ -52,7 +58,7 @@ public class StoolCarrier : MonoBehaviour
         IsCarrying = false;
         if (stoolVisual != null)
         {
-            stoolVisual.transform.position = _pendingPlacePos;
+            stoolVisual.transform.position = _pendingPlacePos + Vector3.up * restingPivotOffset;
             stoolVisual.SetActive(true);
         }
         if (ghostPreview != null) ghostPreview.gameObject.SetActive(false);
@@ -73,7 +79,7 @@ public class StoolCarrier : MonoBehaviour
             bool inRoom = roomFloorBounds.Contains(new Vector3(info.point.x, roomFloorBounds.center.y, info.point.z));
             _placementValid = flatEnough && closeEnough && inRoom;
             _pendingPlacePos = info.point;
-            ghostPreview.position = info.point;
+            ghostPreview.position = info.point + Vector3.up * restingPivotOffset;
         }
         else
         {

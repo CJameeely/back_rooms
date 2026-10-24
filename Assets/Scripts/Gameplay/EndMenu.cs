@@ -1,3 +1,6 @@
+// @role Win/loss screen — Retry Room (keep progress) or Play Again (fresh game).
+// @calls GameState
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;

@@ -1,3 +1,5 @@
+// @role Bottom-center held-item row (max 4) — puzzle objects auto-use whatever item they need.
+
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;

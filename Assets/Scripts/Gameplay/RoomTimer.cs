@@ -1,3 +1,11 @@
+// @role Per-room silent countdown — flicker, sequential light shutoff, blackout loss.
+// @calls GameState, LightSwitchClue
+// @tune totalDuration:float:60-400:room time limit (s)
+// @tune flickerWindow:float:20-90:seconds remaining when flicker starts
+// @tune shutoffWindow:float:5-40:seconds remaining when sequential shutoff starts
+// @tune blackoutHold:float:1-5:blackout hold before loss (s)
+// @tune penaltyFlashDuration:float:0.1-1:penalty dim-flash length (s)
+
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;

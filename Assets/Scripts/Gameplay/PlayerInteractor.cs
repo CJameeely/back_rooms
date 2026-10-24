@@ -1,3 +1,7 @@
+// @role Raycasts for interactables each frame and routes E / Tab / F input to them.
+// @calls ClueTracker, StoolCarrier, ObjectiveToast, InspectionLamp
+// @tune range:float:1-4:interaction raycast distance (m)
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
@@ -63,6 +67,9 @@ public class PlayerInteractor : MonoBehaviour
 
             if (Keyboard.current.tabKey.wasPressedThisFrame && ObjectiveToast.Instance != null)
                 ObjectiveToast.Instance.ReplayCurrent();
+
+            if (Keyboard.current.fKey.wasPressedThisFrame && InspectionLamp.Instance != null)
+                InspectionLamp.Instance.Toggle();
         }
     }
 }

@@ -1,3 +1,6 @@
+// @role Room 2 stool's pickup trigger.
+// @calls StoolCarrier
+
 using UnityEngine;
 
 /// Lives on the physical stool object. E picks it up via the room's StoolCarrier. Once carrying,

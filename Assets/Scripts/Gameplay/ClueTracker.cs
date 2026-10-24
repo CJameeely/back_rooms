@@ -1,3 +1,6 @@
+// @role Bottom-left HUD — fills in each Room 1 clue digit as the player discovers it.
+// @calls GameState
+
 using TMPro;
 using UnityEngine;
 

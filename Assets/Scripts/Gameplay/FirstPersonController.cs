@@ -1,3 +1,7 @@
+// @role Player movement + mouse look; exposes SetInputEnabled() so UI overlays can pause it.
+// @tune moveSpeed:float:1-8:walking speed (m/s)
+// @tune mouseSensitivity:float:0.05-0.5:look sensitivity
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 

@@ -1,3 +1,6 @@
+// @role World-space keypad prop — E opens its KeypadUI panel.
+// @calls KeypadUI
+
 using UnityEngine;
 
 /// The world-space keypad panel. E opens its input UI. `ui` is assigned at build time to the

@@ -1,3 +1,6 @@
+// @role Room 2's exit-code check against GameState.
+// @calls GameState
+
 using UnityEngine;
 
 /// Room 2's exit keypad checks guesses against this instead of CodeManager/Room 1's code.

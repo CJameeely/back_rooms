@@ -345,28 +345,52 @@ namespace WhiteBoxKit
             SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(2f, 0, 2f), Quaternion.identity);
         }
 
+        // Room 3 (instrument repair): base set dressing only — Room3GameplayBuilder (Step 3c)
+        // finds these by name and wires up the cradle assembly, nameplate reveal and breaker
+        // panel, same division of labor as Room 1/2. The cradle sits on the west wall's "Left"
+        // segment (away from the west-center door to F); the breaker box sits on the north wall's
+        // "Right" segment (away from the north-center door to Room 4).
         static void Populate_PatternAndSlot(RoomDef r)
         {
-            var desk = SpawnLocal(P["Desk"], r.contentGroup, new Vector3(-1.5f, 0, -2f), Quaternion.identity);
-            var card = SpawnLocal(P["Paper"], desk.transform, new Vector3(0, 0.375f, 0), Quaternion.identity);
-            CreateLabel("PERFORATED CARD", card.transform, new Vector3(0, 0.25f, 0), r.contentGroup, r.instance.position);
-            SpawnLocal(P["Chair"], r.contentGroup, new Vector3(-1.5f, 0, -0.9f), Quaternion.Euler(0, 190f, 0));
+            // Both "Gameplay_Cradle" and "Gameplay_BreakerBox" are UNSCALED root objects with
+            // their visible geometry on a separate "Mesh" child — Room3GameplayBuilder parents
+            // several more small interactive pieces under each of these roots, and scale
+            // compounds multiplicatively down a transform chain. Putting the non-uniform scale
+            // directly on the thing other scripts parent children under would squash those
+            // children (the exact bug Room 1's drawer/paper hit earlier).
+            var cradle = NewUnscaledRoot("Gameplay_Cradle", r.contentGroup,
+                new Vector3(-RoomHalf + 0.05f, 1f, 2f), Quaternion.Euler(0, 90f, 0));
+            AddScaledMesh(cradle, new Vector3(0.5f, 0.35f, 0.05f), MatStructure);
+            CreateLabel("SIDE-LIGHT INSPECTION", cradle.transform, new Vector3(0, -0.3f, 0), r.contentGroup, r.instance.position);
 
-            string[] digits = { "4", "1", "7", "2" };
-            float[] xs = { -1.5f, -0.5f, 0.5f, 1.5f };
-            for (int i = 0; i < digits.Length; i++)
-            {
-                var mark = SpawnLocal(P["Trace_Decal"], r.contentGroup, new Vector3(xs[i], 1.4f, RoomHalf - 0.001f), Quaternion.Euler(90, 0, 0));
-                mark.transform.localScale = new Vector3(0.3f, 0.3f, 1f);
-                CreateLabel(digits[i], mark.transform, new Vector3(0, 0, -0.15f), r.contentGroup, r.instance.position);
-            }
+            var workbench = SpawnLocal(P["Desk"], r.contentGroup, new Vector3(0, 0, 0), Quaternion.identity);
+            workbench.name = "Gameplay_Workbench";
 
-            var counter = SpawnLocal(P["Counter_Drawer"], r.contentGroup, new Vector3(2f, 0, -2f), Quaternion.Euler(0, -90f, 0));
-            var slotDecal = SpawnLocal(P["Trace_Decal"], counter.transform, new Vector3(0, 0.9f, 0), Quaternion.identity);
-            slotDecal.transform.localScale = new Vector3(0.3f, 1f, 0.3f);
-            CreateLabel("EMPTY SLOT", slotDecal.transform, new Vector3(0, 0.4f, 0), r.contentGroup, r.instance.position);
+            var breakerBox = NewUnscaledRoot("Gameplay_BreakerBox", r.contentGroup,
+                new Vector3(2f, 1.1f, RoomHalf - 0.1f), Quaternion.identity);
+            AddScaledMesh(breakerBox, new Vector3(0.9f, 0.5f, 0.15f), MatStructure);
 
-            SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(2f, 0, 2f), Quaternion.identity);
+            SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(2f, 0, -2f), Quaternion.identity);
+        }
+
+        static GameObject NewUnscaledRoot(string name, Transform parent, Vector3 localPos, Quaternion localRot)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+            go.transform.localRotation = localRot;
+            return go;
+        }
+
+        static GameObject AddScaledMesh(GameObject root, Vector3 scale, Material mat)
+        {
+            GameObject mesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            mesh.name = "Mesh";
+            UnityEngine.Object.DestroyImmediate(mesh.GetComponent<Collider>()); // purely visual; interaction colliders live on the specific sub-parts
+            mesh.transform.SetParent(root.transform, false);
+            mesh.transform.localScale = scale;
+            mesh.GetComponent<Renderer>().sharedMaterial = mat;
+            return mesh;
         }
 
         static void Populate_PortableLight(RoomDef r)
@@ -484,23 +508,20 @@ namespace WhiteBoxKit
             }
         }
 
-        // The one surviving "near-identical repeat" room: a plain template (desk + chair +
-        // pillar) with the key tucked away, plus a couple of unlabeled clutter props so it
-        // still reads as a lived-in space rather than a bare test room.
+        // F: the transition room between Room 2 and Room 3. No timer, no lock — bare, same style
+        // as the level's other near-identical "repeat" rooms, just a pillar for structural
+        // consistency plus the one thing that matters: an inspection lamp base sitting on the
+        // east wall shelf (Room3GameplayBuilder wires up the actual pickup). The shelf sits on
+        // the east wall's "Left" segment, away from the east-center door to Room 3.
         static void Populate_Repeat(RoomDef r)
         {
-            var desk = SpawnLocal(P["Desk"], r.contentGroup, new Vector3(-2f, 0, -2f), Quaternion.identity);
-            SpawnLocal(P["Chair"], r.contentGroup, new Vector3(-1.2f, 0, -1.6f), Quaternion.Euler(0, 200f, 0));
-            SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(2f, 0, 2f), Quaternion.identity);
+            SpawnLocal(P["Pillar"], r.contentGroup, new Vector3(-2f, 0, -2f), Quaternion.identity);
 
-            var key = SpawnLocal(P["Key"], desk.transform, new Vector3(0, 0.375f, 0), Quaternion.identity);
-            CreateLabel("KEY", key.transform, new Vector3(0, 0.25f, 0), r.contentGroup, r.instance.position);
-
-            var dust = SpawnLocal(P["Trace_Decal"], r.contentGroup, new Vector3(2f, 0, -2f), Quaternion.identity);
-            dust.transform.localScale = new Vector3(0.4f, 1f, 0.4f);
-
-            var worn = SpawnLocal(P["Trace_Decal"], r.contentGroup, new Vector3(0, 0, 0f), Quaternion.identity);
-            worn.transform.localScale = new Vector3(1.5f, 1f, 0.3f);
+            // Unscaled root + separate scaled "Mesh" child (see Populate_PatternAndSlot's comment
+            // on NewUnscaledRoot) since Room3GameplayBuilder parents the actual pickup under this.
+            var shelf = NewUnscaledRoot("Gameplay_LampBaseShelf", r.contentGroup,
+                new Vector3(RoomHalf - 0.05f, 1f, 2f), Quaternion.Euler(0, -90f, 0));
+            AddScaledMesh(shelf, new Vector3(0.5f, 0.04f, 0.3f), MatStructure);
         }
 
         // ---------------- Player & scale reference ----------------

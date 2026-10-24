@@ -1,3 +1,7 @@
+// @role Room 1 Clue 2 setup (Triangle) — opens the drawer, reveals the paper inside.
+// @calls SlideMover
+// @tune slideDuration:float:0.2-1.5:drawer slide time (s)
+
 using UnityEngine;
 
 /// Clue 2 setup (Triangle): the drawer front. On E, slides open and reveals the paper sitting

@@ -1,3 +1,7 @@
+// @role Room 1 Clue 4 (Bar) — toggles a light; the clue text is only readable while it's off.
+// @calls CodeManager
+// @tune fadeDuration:float:0.2-1:light/text fade time (s)
+
 using System.Collections;
 using UnityEngine;
 using TMPro;

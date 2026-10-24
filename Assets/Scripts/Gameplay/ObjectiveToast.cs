@@ -1,3 +1,6 @@
+// @role Top-center fade-in room objective line; Tab replays it.
+// @tune holdDuration:float:2-10:how long the toast stays fully visible (s)
+
 using System.Collections;
 using TMPro;
 using UnityEngine;

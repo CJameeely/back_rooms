@@ -1,3 +1,7 @@
+// @role Room 1 Clue 1 (Circle) — slides the displaced cabinet back, reveals hidden wall text.
+// @calls SlideMover
+// @tune slideDuration:float:0.3-2:cabinet slide time (s)
+
 using UnityEngine;
 
 /// Clue 1 (Circle): the displaced cabinet. On E, slides back to its original spot (the clean

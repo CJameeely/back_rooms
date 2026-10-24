@@ -1,3 +1,8 @@
+// @role Shared exit keypad (Room 1 + Room 2) — checks a guess, slides the door open.
+// @calls IKeypadValidator, ClueTracker, RoomTimer, SlideMover, GameState
+// @tune doorSlideDuration:float:0.5-2:door open animation time
+// @tune wrongGuessPenalty:float:0-30:seconds lost per wrong code
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

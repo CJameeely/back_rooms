@@ -1,3 +1,6 @@
+// @role UI button wrapper — forwards a digit press to its KeypadUI.
+// @calls KeypadUI
+
 using UnityEngine;
 
 /// Tiny per-button helper so each of the 0-9 buttons can bind a parameterless UnityEvent

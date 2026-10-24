@@ -1,3 +1,6 @@
+// @role Room 1's "already inside at spawn" substitute for RoomEntryTrigger.
+// @calls GameState, RoomTimer, ObjectiveToast, Inventory
+
 using System.Collections.Generic;
 using UnityEngine;
 
